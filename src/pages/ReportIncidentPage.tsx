@@ -134,6 +134,8 @@ export function ReportIncidentPage() {
     }
 
     setTriagePreview({
+      id: 'ra-preview',
+      caseId: 'preview',
       incidentId: 'preview',
       computedAt: new Date().toISOString(),
       riskScore: score,
@@ -143,6 +145,7 @@ export function ReportIncidentPage() {
       recommendation: riskBand === 'high'
         ? 'High risk detected. Veterinary escalation & sample collection strongly advised.'
         : 'Moderate risk. Monitor herd closely and schedule veterinary visit.',
+      requiresVeterinaryAssessment: true,
       disclaimer: 'This is an AI-assisted risk assessment based on reported symptoms. It is NOT a definitive diagnosis. Veterinary confirmation is mandatory.',
       modelVersion: 'sentinel-triage-mock-v1.0',
       isSynthetic: true,

@@ -151,7 +151,7 @@ export function OutbreakMapPage() {
                       </div>
 
                       <p className="font-800 text-sm text-gray-900 capitalize">
-                        {c.disease !== 'unknown' ? `${c.disease} Suspected` : 'Unknown Illness'}
+                        {String(c.disease) !== 'unknown' ? `${c.disease} Suspected` : 'Unknown Illness'}
                       </p>
 
                       <p className="text-xs text-gray-600">

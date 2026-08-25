@@ -3,14 +3,14 @@
 // ============================================================
 
 import { create } from 'zustand';
-import type { AppNotification } from '../types';
+import type { Alert } from '../types';
 import { SYNTHETIC_NOTIFICATIONS } from '../data/seed';
 
 interface NotificationState {
-  notifications: AppNotification[];
+  notifications: Alert[];
   unreadCount: number;
 
-  addNotification: (n: Omit<AppNotification, 'id' | 'timestamp' | 'isRead'>) => void;
+  addNotification: (n: Omit<Alert, 'id' | 'timestamp' | 'createdAt' | 'isRead'> & { createdAt?: string }) => void;
   markRead: (id: string) => void;
   markAllRead: () => void;
   clearNotification: (id: string) => void;
@@ -21,10 +21,12 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
   unreadCount: SYNTHETIC_NOTIFICATIONS.filter(n => !n.isRead).length,
 
   addNotification: (n) => {
-    const newNotif: AppNotification = {
+    const now = new Date().toISOString();
+    const newNotif: Alert = {
       ...n,
       id: `notif-${Date.now()}`,
-      timestamp: new Date().toISOString(),
+      createdAt: n.createdAt || now,
+      timestamp: n.createdAt || now,
       isRead: false,
     };
     set(state => ({
