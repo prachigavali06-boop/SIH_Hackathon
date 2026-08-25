@@ -1,0 +1,16 @@
+{
+  "name": "Livestock Sentinel",
+  "short_name": "Sentinel",
+  "description": "Closed-Loop Animal Health Response System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f4c2e",
+  "theme_color": "#0f4c2e",
+  "icons": [
+    {
+      "src": "/sentinel-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
