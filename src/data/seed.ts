@@ -1,6 +1,7 @@
 // ============================================================
 // LIVESTOCK SENTINEL — Synthetic Seed Data
 // [SYNTHETIC DATA] — Not real government or animal health data
+// Standardized Canonical Case ID: LV-2026-XXXXX
 // ============================================================
 
 import type {
@@ -177,14 +178,11 @@ export const DISEASE_INFO: Record<SuspectedDisease, { name: string; species: Ani
 // ----------------------------------------------------------------
 
 export const SYNTHETIC_MAP_CASES = [
-  { id: 'mc-01', lat: 20.0059, lng: 73.7930, riskBand: 'high',     species: 'cattle',  count: 8,  disease: 'FMD',  village: 'Chandori' },
-  { id: 'mc-02', lat: 19.9975, lng: 73.8256, riskBand: 'moderate', species: 'buffalo', count: 3,  disease: 'LSD',  village: 'Niphad' },
-  { id: 'mc-03', lat: 20.0412, lng: 73.8512, riskBand: 'low',      species: 'goat',    count: 12, disease: 'PPR',  village: 'Devpur' },
-  { id: 'mc-04', lat: 19.9724, lng: 73.7650, riskBand: 'high',     species: 'cattle',  count: 5,  disease: 'BQ',   village: 'Pimpalnare' },
-  { id: 'mc-05', lat: 20.0189, lng: 73.8030, riskBand: 'moderate', species: 'buffalo', count: 2,  disease: 'HS',   village: 'Ozar' },
-  { id: 'mc-06', lat: 20.0610, lng: 73.7800, riskBand: 'high',     species: 'cattle',  count: 15, disease: 'FMD',  village: 'Vadner' },
-  { id: 'mc-07', lat: 20.0311, lng: 73.8700, riskBand: 'low',      species: 'sheep',   count: 6,  disease: 'PPR',  village: 'Savargaon' },
-  { id: 'mc-08', lat: 19.9880, lng: 73.8410, riskBand: 'moderate', species: 'pig',     count: 4,  disease: 'unknown', village: 'Kasbe Sukene' },
+  { id: 'LV-2026-00001', lat: 20.0059, lng: 73.7930, riskBand: 'high',     species: 'cattle',  count: 8,  disease: 'FMD',  village: 'Chandori' },
+  { id: 'LV-2026-00002', lat: 19.9975, lng: 73.8256, riskBand: 'moderate', species: 'buffalo', count: 3,  disease: 'LSD',  village: 'Niphad' },
+  { id: 'LV-2026-00003', lat: 20.0412, lng: 73.8512, riskBand: 'low',      species: 'goat',    count: 12, disease: 'PPR',  village: 'Devpur' },
+  { id: 'LV-2026-00004', lat: 19.9724, lng: 73.7650, riskBand: 'high',     species: 'cattle',  count: 5,  disease: 'BQ',   village: 'Pimpalnare' },
+  { id: 'LV-2026-00005', lat: 20.0189, lng: 73.8030, riskBand: 'moderate', species: 'buffalo', count: 2,  disease: 'HS',   village: 'Ozar' },
 ] as const;
 
 // ----------------------------------------------------------------
@@ -214,14 +212,14 @@ export const SYNTHETIC_DASHBOARD_STATS: DashboardStats = {
 };
 
 // ----------------------------------------------------------------
-// SYNTHETIC CASES (pipeline demonstration)
+// SYNTHETIC CASES (Canonical ID LV-2026-XXXXX)
 // ----------------------------------------------------------------
 
 export const SYNTHETIC_CASES: CaseRecord[] = [
   {
-    id: 'case-001',
+    id: 'LV-2026-00001',
     incidentReport: {
-      id: 'ir-001',
+      id: 'ir-LV-2026-00001',
       reportedBy: 'u-farmer-01',
       reporterRole: 'farmer',
       createdAt: '2026-08-22T09:14:00Z',
@@ -246,7 +244,9 @@ export const SYNTHETIC_CASES: CaseRecord[] = [
       status: 'confirmed',
     },
     triageResult: {
-      incidentId: 'ir-001',
+      id: 'ra-LV-2026-00001',
+      caseId: 'LV-2026-00001',
+      incidentId: 'LV-2026-00001',
       computedAt: '2026-08-22T09:15:30Z',
       riskScore: 84,
       riskBand: 'high',
@@ -276,12 +276,17 @@ export const SYNTHETIC_CASES: CaseRecord[] = [
       notes: 'Movement restriction advised for adjoining 3 villages.',
     },
     sampleCollection: {
-      sampleId: 'smp-001',
+      id: 'smp-LV-2026-00001',
+      caseId: 'LV-2026-00001',
+      sampleId: 'smp-LV-2026-00001',
+      collectedByUserId: 'u-paravet-01',
       collectedBy: 'u-paravet-01',
       collectedAt: '2026-08-22T16:00:00Z',
       sampleType: 'Epithelial tissue and vesicular fluid',
+      animalCountSampled: 3,
       animalCount: 3,
-      barcode: 'SNT-2608-001',
+      barcode: 'SNT-2026-00001',
+      destinationLabName: 'NRFMD-Mukteswar Regional Lab',
       destinationLab: 'NRFMD-Mukteswar Regional Lab',
       dispatchedAt: '2026-08-22T18:30:00Z',
       receivedAt: '2026-08-23T08:00:00Z',
@@ -292,22 +297,29 @@ export const SYNTHETIC_CASES: CaseRecord[] = [
       ],
     },
     labResult: {
-      sampleId: 'smp-001',
-      labId: 'lab-nrfmd-01',
+      id: 'lr-LV-2026-00001',
+      sampleId: 'smp-LV-2026-00001',
+      caseId: 'LV-2026-00001',
+      labUserId: 'u-lab-01',
       techId: 'u-lab-01',
+      labId: 'lab-nrfmd-01',
       resultEnteredAt: '2026-08-24T10:00:00Z',
+      completedAt: '2026-08-24T10:00:00Z',
       testName: 'RT-PCR FMD Serotyping',
       status: 'positive',
+      pathogenConfirmed: 'FMDV',
       pathogen: 'FMDV',
       serotype: 'Type O',
+      ctValue: 18.4,
       notes: 'Serotype O confirmed. Ct value 18.4.',
       confirmedDisease: 'FMD',
     },
     containmentActions: [
       {
         id: 'ca-001',
-        caseId: 'case-001',
+        caseId: 'LV-2026-00001',
         type: 'movement_restriction',
+        orderedByUserId: 'u-gov-01',
         orderedBy: 'u-gov-01',
         orderedAt: '2026-08-22T20:00:00Z',
         status: 'in_progress',
@@ -316,8 +328,9 @@ export const SYNTHETIC_CASES: CaseRecord[] = [
       },
       {
         id: 'ca-002',
-        caseId: 'case-001',
+        caseId: 'LV-2026-00001',
         type: 'vaccination_drive',
+        orderedByUserId: 'u-gov-01',
         orderedBy: 'u-gov-01',
         orderedAt: '2026-08-24T09:00:00Z',
         status: 'planned',
@@ -326,22 +339,22 @@ export const SYNTHETIC_CASES: CaseRecord[] = [
       },
     ],
     timeline: [
-      { id: 'tl-001', caseId: 'case-001', timestamp: '2026-08-22T09:14:00Z', eventType: 'incident_reported',    actorId: 'u-farmer-01',  actorRole: 'farmer',       summary: 'Incident reported by farmer Ramesh Kumar' },
-      { id: 'tl-002', caseId: 'case-001', timestamp: '2026-08-22T09:15:30Z', eventType: 'triage_completed',     actorId: 'system',       actorRole: 'admin',        summary: 'AI triage completed. Risk Score: 84% (High)' },
-      { id: 'tl-003', caseId: 'case-001', timestamp: '2026-08-22T09:30:00Z', eventType: 'vet_assigned',         actorId: 'u-gov-01',     actorRole: 'gov_officer',  summary: 'Assigned to Dr. Anand Deshmukh' },
-      { id: 'tl-004', caseId: 'case-001', timestamp: '2026-08-22T14:30:00Z', eventType: 'vet_assessed',         actorId: 'u-vet-01',     actorRole: 'veterinarian', summary: 'Veterinary assessment completed. Sample collection ordered.' },
-      { id: 'tl-005', caseId: 'case-001', timestamp: '2026-08-22T16:00:00Z', eventType: 'sample_collected',     actorId: 'u-paravet-01', actorRole: 'paravet',      summary: 'Samples collected — Barcode: SNT-2608-001' },
-      { id: 'tl-006', caseId: 'case-001', timestamp: '2026-08-22T18:30:00Z', eventType: 'sample_dispatched',    actorId: 'u-paravet-01', actorRole: 'paravet',      summary: 'Sample dispatched to NRFMD-Mukteswar lab' },
-      { id: 'tl-007', caseId: 'case-001', timestamp: '2026-08-23T08:00:00Z', eventType: 'sample_received',      actorId: 'u-lab-01',     actorRole: 'lab_tech',     summary: 'Sample received at laboratory, cold chain intact' },
-      { id: 'tl-008', caseId: 'case-001', timestamp: '2026-08-24T10:00:00Z', eventType: 'lab_result',           actorId: 'u-lab-01',     actorRole: 'lab_tech',     summary: 'RT-PCR POSITIVE — FMDV Serotype O confirmed' },
-      { id: 'tl-009', caseId: 'case-001', timestamp: '2026-08-24T11:00:00Z', eventType: 'containment_ordered',  actorId: 'u-gov-01',     actorRole: 'gov_officer',  summary: 'Movement restriction and vaccination drive ordered' },
+      { id: 'tl-001', caseId: 'LV-2026-00001', timestamp: '2026-08-22T09:14:00Z', eventType: 'incident_reported',    actorId: 'u-farmer-01',  actorRole: 'farmer',       summary: 'Incident reported by farmer Ramesh Kumar. Canonical ID: LV-2026-00001' },
+      { id: 'tl-002', caseId: 'LV-2026-00001', timestamp: '2026-08-22T09:15:30Z', eventType: 'triage_completed',     actorId: 'system',       actorRole: 'admin',        summary: 'AI triage completed. Risk Score: 84% (High)' },
+      { id: 'tl-003', caseId: 'LV-2026-00001', timestamp: '2026-08-22T09:30:00Z', eventType: 'vet_assigned',         actorId: 'u-gov-01',     actorRole: 'gov_officer',  summary: 'Assigned to Dr. Anand Deshmukh' },
+      { id: 'tl-004', caseId: 'LV-2026-00001', timestamp: '2026-08-22T14:30:00Z', eventType: 'vet_assessed',         actorId: 'u-vet-01',     actorRole: 'veterinarian', summary: 'Veterinary assessment completed. Sample collection ordered.' },
+      { id: 'tl-005', caseId: 'LV-2026-00001', timestamp: '2026-08-22T16:00:00Z', eventType: 'sample_collected',     actorId: 'u-paravet-01', actorRole: 'paravet',      summary: 'Samples collected — Barcode: SNT-2026-00001' },
+      { id: 'tl-006', caseId: 'LV-2026-00001', timestamp: '2026-08-22T18:30:00Z', eventType: 'sample_dispatched',    actorId: 'u-paravet-01', actorRole: 'paravet',      summary: 'Sample dispatched to NRFMD-Mukteswar lab' },
+      { id: 'tl-007', caseId: 'LV-2026-00001', timestamp: '2026-08-23T08:00:00Z', eventType: 'sample_received',      actorId: 'u-lab-01',     actorRole: 'lab_tech',     summary: 'Sample received at laboratory, cold chain intact' },
+      { id: 'tl-008', caseId: 'LV-2026-00001', timestamp: '2026-08-24T10:00:00Z', eventType: 'lab_result',           actorId: 'u-lab-01',     actorRole: 'lab_tech',     summary: 'RT-PCR POSITIVE — FMDV Serotype O confirmed' },
+      { id: 'tl-009', caseId: 'LV-2026-00001', timestamp: '2026-08-24T11:00:00Z', eventType: 'containment_ordered',  actorId: 'u-gov-01',     actorRole: 'gov_officer',  summary: 'Movement restriction and vaccination drive ordered' },
     ],
   },
   // Case 2 — in progress
   {
-    id: 'case-002',
+    id: 'LV-2026-00002',
     incidentReport: {
-      id: 'ir-002',
+      id: 'ir-LV-2026-00002',
       reportedBy: 'u-paravet-01',
       reporterRole: 'paravet',
       createdAt: '2026-08-24T07:45:00Z',
@@ -367,7 +380,9 @@ export const SYNTHETIC_CASES: CaseRecord[] = [
       status: 'vet_assessed',
     },
     triageResult: {
-      incidentId: 'ir-002',
+      id: 'ra-LV-2026-00002',
+      caseId: 'LV-2026-00002',
+      incidentId: 'LV-2026-00002',
       computedAt: '2026-08-24T07:46:00Z',
       riskScore: 61,
       riskBand: 'moderate',
@@ -386,9 +401,9 @@ export const SYNTHETIC_CASES: CaseRecord[] = [
       isSynthetic: true,
     },
     timeline: [
-      { id: 'tl-101', caseId: 'case-002', timestamp: '2026-08-24T07:45:00Z', eventType: 'incident_reported', actorId: 'u-paravet-01', actorRole: 'paravet',      summary: 'Incident reported by paravet Sunita Patil' },
-      { id: 'tl-102', caseId: 'case-002', timestamp: '2026-08-24T07:46:00Z', eventType: 'triage_completed',  actorId: 'system',       actorRole: 'admin',        summary: 'AI triage completed. Risk Score: 61% (Moderate)' },
-      { id: 'tl-103', caseId: 'case-002', timestamp: '2026-08-24T09:00:00Z', eventType: 'vet_assessed',      actorId: 'u-vet-01',     actorRole: 'veterinarian', summary: 'Veterinary assessment in progress' },
+      { id: 'tl-101', caseId: 'LV-2026-00002', timestamp: '2026-08-24T07:45:00Z', eventType: 'incident_reported', actorId: 'u-paravet-01', actorRole: 'paravet',      summary: 'Incident reported by paravet Sunita Patil. Canonical ID: LV-2026-00002' },
+      { id: 'tl-102', caseId: 'LV-2026-00002', timestamp: '2026-08-24T07:46:00Z', eventType: 'triage_completed',  actorId: 'system',       actorRole: 'admin',        summary: 'AI triage completed. Risk Score: 61% (Moderate)' },
+      { id: 'tl-103', caseId: 'LV-2026-00002', timestamp: '2026-08-24T09:00:00Z', eventType: 'vet_assessed',      actorId: 'u-vet-01',     actorRole: 'veterinarian', summary: 'Veterinary assessment in progress' },
     ],
   },
 ];
@@ -402,34 +417,37 @@ export const SYNTHETIC_NOTIFICATIONS: AppNotification[] = [
     id: 'notif-001',
     severity: 'critical',
     title: 'OUTBREAK ALERT — FMD Confirmed',
-    message: 'FMDV Serotype O confirmed in Nashik district (Chandori). Containment actions initiated.',
+    message: 'FMDV Serotype O confirmed in Nashik district (Chandori). Case ID: LV-2026-00001.',
     timestamp: '2026-08-24T11:00:00Z',
     isRead: false,
-    caseId: 'case-001',
+    caseId: 'LV-2026-00001',
     actionLabel: 'View Case',
-    actionPath: '/cases/case-001',
+    actionPath: '/cases/LV-2026-00001',
+    createdAt: '2026-08-24T11:00:00Z',
   },
   {
     id: 'notif-002',
     severity: 'warning',
     title: 'New High-Risk Case — Niphad Block',
-    message: '8 cattle affected, FMD suspected. Veterinary assessment pending.',
+    message: '8 cattle affected, FMD suspected. Case ID: LV-2026-00001.',
     timestamp: '2026-08-22T09:16:00Z',
     isRead: false,
     targetRoles: ['veterinarian', 'gov_officer'],
-    caseId: 'case-001',
+    caseId: 'LV-2026-00001',
     actionLabel: 'Assign Vet',
     actionPath: '/vet-console',
+    createdAt: '2026-08-22T09:16:00Z',
   },
   {
     id: 'notif-003',
     severity: 'info',
-    title: 'Sample Received — SNT-2608-001',
-    message: 'Sample from Chandori case received at NRFMD lab. Cold chain intact.',
+    title: 'Sample Received — SNT-2026-00001',
+    message: 'Sample from Chandori case (LV-2026-00001) received at NRFMD lab.',
     timestamp: '2026-08-23T08:00:00Z',
     isRead: true,
     targetRoles: ['lab_tech', 'gov_officer'],
     actionLabel: 'Track Sample',
     actionPath: '/lab-tracker',
+    createdAt: '2026-08-23T08:00:00Z',
   },
 ];

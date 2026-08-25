@@ -151,7 +151,7 @@ export function AlertsPage() {
                   <p className="text-xs text-gray-700 pl-6">{n.message}</p>
 
                   <div className="flex items-center gap-4 pl-6 pt-2 text-[11px] text-gray-400">
-                    <span>{format(new Date(n.timestamp), 'dd MMM yyyy, HH:mm')}</span>
+                    <span>{format(new Date(n.createdAt || n.timestamp || new Date().toISOString()), 'dd MMM yyyy, HH:mm')}</span>
                     {n.actionPath && (
                       <button
                         onClick={() => {

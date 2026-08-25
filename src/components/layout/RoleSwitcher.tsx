@@ -8,12 +8,15 @@ import { DEMO_USERS } from '../../data/seed';
 import type { UserRole } from '../../types';
 
 const ROLE_LABELS: Record<UserRole, string> = {
-  farmer:       '🌾 Farmer',
-  paravet:      '💉 Para-vet',
-  veterinarian: '🩺 Veterinarian',
-  lab_tech:     '🔬 Lab Tech',
-  gov_officer:  '🏛 Gov. Officer',
-  admin:        '⚙️ Admin',
+  farmer:             '🌾 Farmer',
+  field_worker:       '🌾 Field Worker',
+  paravet:            '💉 Para-vet',
+  veterinarian:       '🩺 Veterinarian',
+  laboratory:         '🔬 Laboratory',
+  lab_tech:           '🔬 Lab Tech',
+  government_officer: '🏛 Gov. Officer',
+  gov_officer:        '🏛 Gov. Officer',
+  admin:              '⚙️ Admin',
 };
 
 interface RoleSwitcherProps {
