@@ -3,12 +3,14 @@
 // Leaflet Map integration with risk heatmaps & radius clusters
 // ============================================================
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
 import L from 'leaflet';
-import { Map as MapIcon, Filter, Layers } from 'lucide-react';
+import { Map as MapIcon, Filter, Layers, Flame } from 'lucide-react';
 import { SYNTHETIC_MAP_CASES } from '../data/seed';
 import { Badge } from '../components/ui/Badge';
+import { retrieveClusters } from '../services/api';
+import type { OutbreakCluster } from '../types';
 
 // Custom Leaflet marker icons using inline SVG data URIs
 const createCustomIcon = (color: string) => {
@@ -40,6 +42,11 @@ export function OutbreakMapPage() {
   const [selectedRisk, setSelectedRisk] = useState<string>('all');
   const [selectedSpecies, setSelectedSpecies] = useState<string>('all');
   const [showClusters, setShowClusters] = useState<boolean>(true);
+  const [clusters, setClusters] = useState<OutbreakCluster[]>([]);
+
+  useEffect(() => {
+    retrieveClusters('Nashik').then(res => setClusters(res));
+  }, []);
 
   const filteredCases = SYNTHETIC_MAP_CASES.filter(item => {
     const matchRisk = selectedRisk === 'all' || item.riskBand === selectedRisk;
@@ -57,11 +64,16 @@ export function OutbreakMapPage() {
             Spatio-Temporal Outbreak & Cluster Map
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Nashik Surveillance Region · DBSCAN Radius Clustering ·{' '}
+            Nashik Surveillance Region · Dynamic Haversine Radius Clustering ·{' '}
             <span className="synthetic-watermark">Synthetic Map Data</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {clusters.length > 0 && (
+            <span className="badge badge-high flex items-center gap-1 font-600">
+              <Flame size={12} /> {clusters.length} AI Cluster{clusters.length !== 1 ? 's' : ''} Detected
+            </span>
+          )}
           <button
             onClick={() => setShowClusters(s => !s)}
             className={`btn btn-sm ${showClusters ? 'btn-primary' : 'btn-secondary'}`}

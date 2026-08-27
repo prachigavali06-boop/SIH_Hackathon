@@ -9,8 +9,9 @@ import {
   FileText, MapPin, Check, Send, Brain, Info
 } from 'lucide-react';
 import { SYMPTOM_CATALOG } from '../data/seed';
-import type { AnimalSpecies, TriageResult, RiskBand, SuspectedDisease } from '../types';
+import type { AnimalSpecies, TriageResult } from '../types';
 import { AIExplanationPanel } from '../components/ui/AIExplanationPanel';
+import { RiskEngine } from '../services/aiRiskEngine';
 
 const SPECIES_OPTIONS: { id: AnimalSpecies; label: string; emoji: string; labelHi: string }[] = [
   { id: 'cattle',  label: 'Cattle (Cow/Ox)', emoji: '🐄', labelHi: 'गाय / बैल' },
@@ -58,99 +59,37 @@ export function ReportIncidentPage() {
   // Category filter for symptoms UI
   const [symptomCategory, setSymptomCategory] = useState<string>('all');
 
-  // Compute instantaneous AI Triage Preview whenever relevant inputs change
+  // Compute instantaneous AI Triage Preview via centralized RiskEngine
   useEffect(() => {
     if (selectedSymptoms.length === 0) {
       setTriagePreview(null);
       return;
     }
 
-    // Rule-based Mock AI Engine logic
-    let score = 20; // base score
-    let suspected: SuspectedDisease = 'unknown';
-
-    // Symptom checks
-    const hasVesiclesMouth = selectedSymptoms.includes('vesicles_mouth');
-    const hasVesiclesFeet = selectedSymptoms.includes('vesicles_feet');
-    const hasNodules = selectedSymptoms.includes('skin_nodules');
-    const hasDiarrhea = selectedSymptoms.includes('diarrhea') || selectedSymptoms.includes('bloody_diarrhea');
-    const hasCough = selectedSymptoms.includes('cough') || selectedSymptoms.includes('dyspnea');
-
-    if ((hasVesiclesMouth || hasVesiclesFeet) && (species === 'cattle' || species === 'buffalo' || species === 'pig')) {
-      score += 45;
-      suspected = 'FMD';
-    } else if (hasNodules && (species === 'cattle' || species === 'buffalo')) {
-      score += 35;
-      suspected = 'LSD';
-    } else if (hasDiarrhea && (species === 'sheep' || species === 'goat')) {
-      score += 40;
-      suspected = 'PPR';
-    } else if (hasCough && (species === 'cattle' || species === 'buffalo')) {
-      score += 30;
-      suspected = 'HS';
-    } else if (deadAnimals > 0) {
-      score += 35;
-      suspected = 'BQ';
-    }
-
-    if (affectedAnimals / totalAnimals > 0.5) score += 15;
-    if (deadAnimals > 0) score += 15;
-    if (!isVaccinated) score += 10;
-
-    score = Math.min(Math.max(score, 15), 95);
-
-    let riskBand: RiskBand = 'low';
-    if (score >= 75) riskBand = 'high';
-    else if (score >= 45) riskBand = 'moderate';
-
-    const factors = [
-      {
-        label: 'Symptom Match Rate',
-        value: `${selectedSymptoms.length} reported symptoms`,
-        weight: 35,
-        direction: 'risk' as const,
+    const assessment = RiskEngine.assess({
+      species,
+      totalAnimals,
+      affectedAnimals,
+      deadAnimals,
+      symptomIds: selectedSymptoms,
+      isVaccinated,
+      vaccineNames,
+      additionalNotes,
+      location: {
+        latitude: lat,
+        longitude: lng,
+        village,
+        block,
+        district,
+        state: stateName,
       },
-      {
-        label: 'Herd Attack Rate',
-        value: `${affectedAnimals} of ${totalAnimals} affected (${Math.round((affectedAnimals/totalAnimals)*100)}%)`,
-        weight: 20,
-        direction: 'risk' as const,
-      },
-      {
-        label: 'Vaccination Status',
-        value: isVaccinated ? 'Vaccinated (protective)' : 'Unvaccinated (+10% risk)',
-        weight: isVaccinated ? 15 : 15,
-        direction: isVaccinated ? ('protective' as const) : ('risk' as const),
-      },
-    ];
-
-    if (deadAnimals > 0) {
-      factors.push({
-        label: 'Mortality Reported',
-        value: `${deadAnimals} death(s)`,
-        weight: 20,
-        direction: 'risk' as const,
-      });
-    }
+    });
 
     setTriagePreview({
-      id: 'ra-preview',
-      caseId: 'preview',
+      ...assessment,
       incidentId: 'preview',
-      computedAt: new Date().toISOString(),
-      riskScore: score,
-      riskBand,
-      suspectedDisease: suspected,
-      factors,
-      recommendation: riskBand === 'high'
-        ? 'High risk detected. Veterinary escalation & sample collection strongly advised.'
-        : 'Moderate risk. Monitor herd closely and schedule veterinary visit.',
-      requiresVeterinaryAssessment: true,
-      disclaimer: 'This is an AI-assisted risk assessment based on reported symptoms. It is NOT a definitive diagnosis. Veterinary confirmation is mandatory.',
-      modelVersion: 'sentinel-triage-mock-v1.0',
-      isSynthetic: true,
     });
-  }, [species, totalAnimals, affectedAnimals, deadAnimals, selectedSymptoms, isVaccinated]);
+  }, [species, totalAnimals, affectedAnimals, deadAnimals, selectedSymptoms, isVaccinated, vaccineNames, lat, lng, village, block, district, stateName, additionalNotes]);
 
   const toggleSymptom = (id: string) => {
     setSelectedSymptoms(prev =>

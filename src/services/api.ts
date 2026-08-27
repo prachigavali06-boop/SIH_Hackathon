@@ -13,6 +13,7 @@ import type {
 } from '../types';
 import { generateCanonicalCaseId } from '../types';
 import { SYNTHETIC_CASES, SYNTHETIC_NOTIFICATIONS } from '../data/seed';
+import { RiskEngine } from './aiRiskEngine';
 
 // In-Memory store fallback for hackathon offline demo mode
 let localCasesStore: CaseRecord[] = [...SYNTHETIC_CASES];
@@ -354,10 +355,12 @@ export async function submitRiskAssessment(assessment: Omit<RiskAssessment, 'id'
 }
 
 // ----------------------------------------------------------------
-// API CONTRACT 5: Retrieve Clusters
+// API CONTRACT 5: Retrieve Clusters (Dynamic AI Cluster Detector)
 // ----------------------------------------------------------------
 export async function retrieveClusters(district?: string): Promise<OutbreakCluster[]> {
-  const clusters: OutbreakCluster[] = [
+  const dynamicClusters = RiskEngine.detectClusters(localCasesStore, 10.0);
+
+  const fallbackClusters: OutbreakCluster[] = [
     {
       id: 'cluster-01',
       clusterName: 'Chandori FMD Hotspot Cluster',
@@ -375,8 +378,10 @@ export async function retrieveClusters(district?: string): Promise<OutbreakClust
     },
   ];
 
-  if (district) return clusters.filter(c => c.affectedDistrict === district);
-  return clusters;
+  const combined = dynamicClusters.length > 0 ? dynamicClusters : fallbackClusters;
+
+  if (district) return combined.filter(c => c.affectedDistrict === district);
+  return combined;
 }
 
 // ----------------------------------------------------------------
