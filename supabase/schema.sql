@@ -297,12 +297,105 @@ CREATE TABLE IF NOT EXISTS response_actions (
 );
 
 -- ------------------------------------------------------------
+-- 17. CASE EVENTS (Event-Driven Case Timeline)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS case_events (
+  id VARCHAR(64) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  case_id VARCHAR(64) NOT NULL REFERENCES health_cases(id) ON DELETE CASCADE,
+  actor_user_id VARCHAR(64) REFERENCES users(id) ON DELETE SET NULL,
+  actor_role VARCHAR(32) NOT NULL,
+  event_type VARCHAR(64) NOT NULL CHECK (event_type IN (
+    'CASE_CREATED', 'SYMPTOMS_REPORTED', 'VOICE_ADDED', 'IMAGE_ADDED',
+    'RISK_ASSESSED', 'CLUSTER_DETECTED', 'VET_ASSIGNED', 'FIELD_VISIT_COMPLETED',
+    'SAMPLE_COLLECTED', 'SAMPLE_DISPATCHED', 'LAB_RECEIVED', 'LAB_RESULT_UPDATED',
+    'ALERT_SENT', 'RESPONSE_STARTED', 'CASE_CONTAINED', 'CASE_CLOSED'
+  )),
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  summary TEXT NOT NULL,
+  metadata JSONB DEFAULT '{}'::jsonb
+);
+
+-- ------------------------------------------------------------
+-- 18. EVIDENCE (Multimodal Field Evidence)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS evidence (
+  id VARCHAR(64) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  case_id VARCHAR(64) NOT NULL REFERENCES health_cases(id) ON DELETE CASCADE,
+  type VARCHAR(32) NOT NULL CHECK (type IN (
+    'TEXT', 'VOICE', 'IMAGE', 'FIELD_OBSERVATION',
+    'VACCINATION', 'ENVIRONMENTAL', 'MOVEMENT'
+  )),
+  source VARCHAR(255) NOT NULL,
+  uri TEXT,
+  transcript TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ------------------------------------------------------------
+-- 19. VACCINATION COVERAGE (Village/Block/District Level)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS vaccination_coverage (
+  id VARCHAR(64) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  district VARCHAR(128) NOT NULL,
+  block VARCHAR(128) NOT NULL,
+  village VARCHAR(128),
+  species VARCHAR(32) NOT NULL,
+  eligible_animal_count INT NOT NULL DEFAULT 0,
+  vaccinated_animal_count INT NOT NULL DEFAULT 0,
+  coverage_percentage NUMERIC(5,2) NOT NULL DEFAULT 0,
+  risk_threshold_percentage NUMERIC(5,2) DEFAULT 75,  -- Configurable, not fixed
+  is_vulnerable BOOLEAN DEFAULT FALSE,
+  campaign_date DATE,
+  vaccine_type VARCHAR(255) NOT NULL,
+  source VARCHAR(255) NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ------------------------------------------------------------
+-- 20. MOVEMENT ROUTES (Livestock Trade/Movement Network)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS movement_routes (
+  id VARCHAR(64) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  market_node_name VARCHAR(255) NOT NULL,
+  source_location JSONB NOT NULL,
+  destination_location JSONB NOT NULL,
+  route_type VARCHAR(32) NOT NULL CHECK (route_type IN (
+    'interstate', 'interdistrict', 'local_market', 'transhumance'
+  )),
+  estimated_movement_volume INT NOT NULL DEFAULT 0,
+  time_period VARCHAR(32) NOT NULL,
+  confidence VARCHAR(16) NOT NULL CHECK (confidence IN ('high', 'medium', 'low')),
+  source VARCHAR(255) NOT NULL,
+  risk_level VARCHAR(16) CHECK (risk_level IN ('low', 'moderate', 'high', 'critical')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ------------------------------------------------------------
+-- 21. AUDIT EVENTS (Audit Trail)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS audit_events (
+  id VARCHAR(64) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  entity_type VARCHAR(32) NOT NULL CHECK (entity_type IN (
+    'case', 'sample', 'alert', 'user', 'evidence', 'containment'
+  )),
+  entity_id VARCHAR(64) NOT NULL,
+  action VARCHAR(128) NOT NULL,
+  actor_user_id VARCHAR(64) NOT NULL,
+  actor_role VARCHAR(32) NOT NULL,
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  details TEXT
+);
+
+-- ------------------------------------------------------------
 -- INDEXES FOR PERFORMANCE & SPATIAL SEARCH
 -- ------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_health_cases_district ON health_cases(district);
 CREATE INDEX IF NOT EXISTS idx_health_cases_status ON health_cases(status);
 CREATE INDEX IF NOT EXISTS idx_health_cases_risk_band ON health_cases(risk_band);
 CREATE INDEX IF NOT EXISTS idx_health_cases_lat_lng ON health_cases(latitude, longitude);
+CREATE INDEX IF NOT EXISTS idx_health_cases_village ON health_cases(village);
+CREATE INDEX IF NOT EXISTS idx_health_cases_block ON health_cases(block);
 
 CREATE INDEX IF NOT EXISTS idx_samples_barcode ON samples(barcode);
 CREATE INDEX IF NOT EXISTS idx_samples_case_id ON samples(case_id);
@@ -310,6 +403,14 @@ CREATE INDEX IF NOT EXISTS idx_lab_results_case_id ON lab_results(case_id);
 
 CREATE INDEX IF NOT EXISTS idx_alerts_target_district ON alerts(target_district);
 CREATE INDEX IF NOT EXISTS idx_alerts_created_at ON alerts(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_case_events_case_id ON case_events(case_id);
+CREATE INDEX IF NOT EXISTS idx_case_events_timestamp ON case_events(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_evidence_case_id ON evidence(case_id);
+CREATE INDEX IF NOT EXISTS idx_vacc_coverage_district ON vaccination_coverage(district, block);
+CREATE INDEX IF NOT EXISTS idx_vacc_coverage_vulnerable ON vaccination_coverage(is_vulnerable);
+CREATE INDEX IF NOT EXISTS idx_audit_events_entity ON audit_events(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_audit_events_timestamp ON audit_events(timestamp DESC);
 
 -- ------------------------------------------------------------
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -321,6 +422,9 @@ ALTER TABLE risk_assessments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE samples ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lab_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE alerts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE case_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE evidence ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_events ENABLE ROW LEVEL SECURITY;
 
 -- Allow read access to authenticated users or public demo
 CREATE POLICY "Public & Auth Read Access" ON health_cases FOR SELECT USING (true);
@@ -328,3 +432,7 @@ CREATE POLICY "Public & Auth Insert Access" ON health_cases FOR INSERT WITH CHEC
 CREATE POLICY "Public & Auth Read Risk" ON risk_assessments FOR SELECT USING (true);
 CREATE POLICY "Public & Auth Read Samples" ON samples FOR SELECT USING (true);
 CREATE POLICY "Public & Auth Read Alerts" ON alerts FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Read Events" ON case_events FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Events" ON case_events FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public & Auth Read Evidence" ON evidence FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Evidence" ON evidence FOR INSERT WITH CHECK (true);
