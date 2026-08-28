@@ -15,11 +15,16 @@ const EVENT_LABELS: Record<string, string> = {
   triage_completed:    'AI Triage Completed',
   vet_assigned:        'Veterinarian Assigned',
   vet_assessed:        'Veterinary Assessment',
+  field_visit:         'Field Investigation & Visit',
   sample_collected:    'Sample Collected',
-  sample_dispatched:   'Sample Dispatched',
+  sample_dispatched:   'Sample Dispatched to Lab',
   sample_received:     'Sample Received at Lab',
   lab_result:          'Lab Result Entered',
+  vaccination_updated: 'Vaccination Recorded',
+  treatment_added:     'Treatment Prescribed',
+  escalated:           'Operational Priority Escalation',
   containment_ordered: 'Containment Action Ordered',
+  case_closed:         'Case Closed & Contained',
 };
 
 export function CaseTimeline({ events }: CaseTimelineProps) {
