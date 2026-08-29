@@ -1,7 +1,4 @@
-// ============================================================
-// CaseDetailPage — full case lifecycle view
-// ============================================================
-
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, User, Calendar, FlaskConical } from 'lucide-react';
 import { format } from 'date-fns';
@@ -9,6 +6,8 @@ import { Badge } from '../components/ui/Badge';
 import { AIExplanationPanel } from '../components/ui/AIExplanationPanel';
 import { CaseTimeline } from '../components/ui/CaseTimeline';
 import { SYNTHETIC_CASES, SYMPTOM_CATALOG } from '../data/seed';
+import { getCaseById } from '../services/api';
+import type { CaseRecord } from '../types';
 
 const SPECIES_EMOJI: Record<string, string> = {
   cattle: '🐄', buffalo: '🐃', goat: '🐐',
@@ -24,7 +23,50 @@ const CHAIN_STEP_LABELS: Record<string, string> = {
 export function CaseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const caseRecord = SYNTHETIC_CASES.find(c => c.id === id);
+  const [caseRecord, setCaseRecord] = useState<CaseRecord | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    getCaseById(id)
+      .then(res => {
+        if (!isMounted) return;
+        if (res) {
+          setCaseRecord(res);
+        } else {
+          const fallback = SYNTHETIC_CASES.find(c => c.id === id) || null;
+          setCaseRecord(fallback);
+        }
+      })
+      .catch(err => {
+        if (!isMounted) return;
+        console.warn('Error fetching case by id:', err);
+        const fallback = SYNTHETIC_CASES.find(c => c.id === id) || null;
+        setCaseRecord(fallback);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="page-enter text-center py-20 space-y-3">
+        <div className="w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-gray-500 text-sm">Loading case details...</p>
+      </div>
+    );
+  }
 
   if (!caseRecord) {
     return (

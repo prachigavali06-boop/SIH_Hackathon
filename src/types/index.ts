@@ -194,6 +194,7 @@ export interface HealthCase {
 export interface Symptom {
   id: string;
   label: string;
+  labelHi?: string;
   category: 'general' | 'respiratory' | 'digestive' | 'skin' | 'neurological' | 'reproductive';
 }
 
