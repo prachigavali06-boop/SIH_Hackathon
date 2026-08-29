@@ -53,7 +53,8 @@ function createMockCaseRecord(
   species: 'cattle' | 'buffalo' | 'goat' = 'cattle',
   symptoms: string[] = ['fever', 'vesicles_mouth'],
   riskBand: 'low' | 'moderate' | 'high' = 'high',
-  suspectedDisease: 'FMD' | 'LSD' | 'BQ' = 'FMD'
+  suspectedDisease: 'FMD' | 'LSD' | 'BQ' = 'FMD',
+  createdAt: string = new Date().toISOString()  // default: now (within 48h window)
 ): CaseRecord {
   return {
     id,
@@ -61,8 +62,8 @@ function createMockCaseRecord(
       id: `sr-${id}`,
       reportedBy: 'u-farmer-01',
       reporterRole: 'farmer',
-      createdAt: '2026-08-25T10:00:00Z',
-      updatedAt: '2026-08-25T10:00:00Z',
+      createdAt,
+      updatedAt: createdAt,
       species,
       totalAnimals: 10,
       affectedAnimals: 4,
@@ -96,7 +97,7 @@ function createMockCaseRecord(
       recommendation: 'Test recommendation',
       disclaimer: 'AI-assisted preliminary surveillance assessment — veterinary confirmation required.',
       isSynthetic: true,
-      computedAt: '2026-08-25T10:00:00Z',
+      computedAt: createdAt,
     },
     timeline: [],
   };
@@ -121,7 +122,7 @@ function assert(condition: boolean, testName: string, detail?: string) {
 
 export function runAiRiskEngineTests(): { passed: number; failed: number; total: number } {
   console.log('\n======================================================');
-  console.log('RUNNING AI RISK ENGINE DETERMINISTIC TEST SUITE (15 SCENARIOS)');
+  console.log('RUNNING AI RISK ENGINE DETERMINISTIC TEST SUITE (20 SCENARIOS)');
   console.log('======================================================\n');
 
   // ----------------------------------------------------------
@@ -394,14 +395,19 @@ export function runAiRiskEngineTests(): { passed: number; failed: number; total:
   assert(Boolean(mmFactor12?.value?.includes('Text') && mmFactor12?.value?.includes('Voice') && mmFactor12?.value?.includes('Image')), '12.2 Text + Voice + Image all captured in factor value');
 
   // ----------------------------------------------------------
-  // Scenario 13: Duplicate-Report Detection
+  // Scenario 13: Duplicate-Report Detection (existing)
   // ----------------------------------------------------------
   console.log('\nScenario 13: Duplicate-Report Detection');
+
+  // Case created RIGHT NOW — within the 48h window
   const existingCase = createMockCaseRecord(
     'LV-EXISTING-001',
     BASE_LOCATION,
     'cattle',
-    ['fever', 'vesicles_mouth', 'drooling']
+    ['fever', 'vesicles_mouth', 'drooling'],
+    'high',
+    'FMD',
+    new Date().toISOString()
   );
   const dupCheck1 = RiskEngine.detectDuplicateReports(
     {
@@ -425,6 +431,185 @@ export function runAiRiskEngineTests(): { passed: number; failed: number; total:
   };
   const dupCheck2 = RiskEngine.detectDuplicateReports(distantNewCase, [existingCase]);
   assert(dupCheck2.isLikelyDuplicate === false, '13.3 Distinct distant report marked as non-duplicate');
+
+  // ----------------------------------------------------------
+  // Scenario 16: Geo duplicate — 2 matching symptoms at same GPS (FIX 1 validation)
+  // Jaccard = 2/5 = 0.40 → should now trigger duplicate (was 0.5 threshold, now 0.4)
+  // ----------------------------------------------------------
+  console.log('\nScenario 16: Geo duplicate with 2-symptom overlap (Jaccard 0.4 boundary)');
+
+  const seedLikeCaseRecent = createMockCaseRecord(
+    'LV-2026-00001',
+    BASE_LOCATION,               // lat:20.0059, lng:73.7930 — same as form default
+    'cattle',
+    ['fever', 'vesicles_mouth', 'vesicles_feet', 'drooling', 'lameness'], // 5 symptoms
+    'high',
+    'FMD',
+    new Date().toISOString()     // within 48h window
+  );
+
+  const twoSymptomInput: RiskAssessmentInput = {
+    species: 'cattle',
+    totalAnimals: 10,
+    affectedAnimals: 3,
+    symptomIds: ['fever', 'vesicles_mouth'], // 2 matching → Jaccard = 2/5 = 0.40
+    location: BASE_LOCATION,
+  };
+  const dupCheck16 = RiskEngine.detectDuplicateReports(twoSymptomInput, [seedLikeCaseRecent]);
+  assert(
+    dupCheck16.isLikelyDuplicate === true,
+    '16.1 Two matching symptoms at same GPS within 48h → duplicate (Jaccard=0.40 meets new ≥0.4 threshold)'
+  );
+  assert(
+    dupCheck16.matchingCaseId === 'LV-2026-00001',
+    '16.2 Correct matching case ID returned'
+  );
+
+  // ----------------------------------------------------------
+  // Scenario 17: 48h time-window enforcement (FIX 2 validation)
+  // Same location + same species + overlapping symptoms BUT case is 72h old → NOT duplicate
+  // ----------------------------------------------------------
+  console.log('\nScenario 17: Time-window enforcement — old case (72h ago) should not trigger duplicate');
+
+  const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
+  const oldCase = createMockCaseRecord(
+    'LV-OLD-001',
+    BASE_LOCATION,
+    'cattle',
+    ['fever', 'vesicles_mouth', 'drooling'],
+    'high',
+    'FMD',
+    seventyTwoHoursAgo  // 72h ago — outside the 48h window
+  );
+  const dupCheck17 = RiskEngine.detectDuplicateReports(
+    {
+      species: 'cattle',
+      totalAnimals: 10,
+      affectedAnimals: 4,
+      symptomIds: ['fever', 'vesicles_mouth', 'drooling'], // identical symptoms
+      location: BASE_LOCATION,                             // identical location
+    },
+    [oldCase]
+  );
+  assert(
+    dupCheck17.isLikelyDuplicate === false,
+    '17.1 Matching case older than 48h is excluded from duplicate check'
+  );
+
+  // ----------------------------------------------------------
+  // Scenario 18: Village-name path duplicate (within 48h window)
+  // Same village + same species + Jaccard >= 0.75 → duplicate
+  // ----------------------------------------------------------
+  console.log('\nScenario 18: Village-path duplicate within 48h (Jaccard >= 0.75)');
+
+  const villageCaseRecent = createMockCaseRecord(
+    'LV-VILLAGE-001',
+    BASE_LOCATION,
+    'cattle',
+    ['fever', 'vesicles_mouth', 'drooling', 'lameness'], // 4 symptoms
+    'high',
+    'FMD',
+    new Date().toISOString()
+  );
+  const villageMatchInput: RiskAssessmentInput = {
+    species: 'cattle',
+    totalAnimals: 15,
+    affectedAnimals: 6,
+    symptomIds: ['fever', 'vesicles_mouth', 'drooling', 'lameness'], // 4/4 match → Jaccard 1.0
+    location: {
+      ...BASE_LOCATION,
+      latitude: BASE_LOCATION.latitude + 0.005,  // ~550m away — beyond geo 0.5km limit
+      longitude: BASE_LOCATION.longitude + 0.005,
+    },
+  };
+  const dupCheck18 = RiskEngine.detectDuplicateReports(
+    villageMatchInput,
+    [villageCaseRecent]
+  );
+  assert(
+    dupCheck18.isLikelyDuplicate === true,
+    '18.1 Same village + same species + high symptom overlap within 48h → duplicate (village path)'
+  );
+  assert(
+    dupCheck18.matchingCaseId === 'LV-VILLAGE-001',
+    '18.2 Village-path returns correct matching case ID'
+  );
+
+  // ----------------------------------------------------------
+  // Scenario 19: Different species — should never trigger duplicate
+  // Same location, same symptoms, same time, different species → NOT duplicate
+  // ----------------------------------------------------------
+  console.log('\nScenario 19: Species mismatch — different species never triggers duplicate');
+
+  const goatCase = createMockCaseRecord(
+    'LV-GOAT-001',
+    BASE_LOCATION,
+    'goat',
+    ['fever', 'vesicles_mouth', 'drooling'],
+    'high',
+    'FMD',
+    new Date().toISOString()
+  );
+  const cattleInput: RiskAssessmentInput = {
+    species: 'cattle',            // different species
+    totalAnimals: 10,
+    affectedAnimals: 4,
+    symptomIds: ['fever', 'vesicles_mouth', 'drooling'], // same symptoms as goat case
+    location: BASE_LOCATION,     // same GPS
+  };
+  const dupCheck19 = RiskEngine.detectDuplicateReports(cattleInput, [goatCase]);
+  assert(
+    dupCheck19.isLikelyDuplicate === false,
+    '19.1 Different species at same location with overlapping symptoms → NOT duplicate'
+  );
+
+  // ----------------------------------------------------------
+  // Scenario 20: Dynamic session case duplicate detection
+  // Case A (LV-2026-00006, Buffalo, Niphad) added to dynamic list -> Case B detects Case A
+  // ----------------------------------------------------------
+  console.log('\nScenario 20: Dynamic session case duplicate detection');
+
+  const niphadLocation: GeoLocation = {
+    latitude: 19.9975,
+    longitude: 73.8256,
+    village: 'Niphad',
+    block: 'Niphad',
+    district: 'Nashik',
+    state: 'Maharashtra',
+  };
+
+  // Case A: dynamically created during user session
+  const dynamicCaseA = createMockCaseRecord(
+    'LV-2026-00006',
+    niphadLocation,
+    'buffalo',
+    ['fever', 'skin_nodules'],
+    'high',
+    'LSD',
+    new Date().toISOString() // created now
+  );
+
+  // Dynamic case list representing component state after Case A creation
+  const dynamicSessionCases: CaseRecord[] = [dynamicCaseA];
+
+  // Case B: second report started immediately with same species, location, symptoms
+  const caseBInput: RiskAssessmentInput = {
+    species: 'buffalo',
+    totalAnimals: 15,
+    affectedAnimals: 3,
+    symptomIds: ['fever', 'skin_nodules'],
+    location: niphadLocation,
+  };
+
+  const dupCheck20 = RiskEngine.detectDuplicateReports(caseBInput, dynamicSessionCases);
+  assert(
+    dupCheck20.isLikelyDuplicate === true,
+    '20.1 Case B successfully detects dynamically created Case A in same session'
+  );
+  assert(
+    dupCheck20.matchingCaseId === 'LV-2026-00006',
+    '20.2 Matched with newly created Case A canonical ID (LV-2026-00006)'
+  );
 
   // ----------------------------------------------------------
   // Scenario 14: Missing Optional Evidence

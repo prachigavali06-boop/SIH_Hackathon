@@ -859,12 +859,20 @@ export class RiskEngine {
   static detectDuplicateReports(
     newCase: RiskAssessmentInput,
     existingCases: CaseRecord[],
-    _windowHours: number = DEFAULT_RISK_ENGINE_CONFIG.thresholds.duplicateTimeWindowHours,
+    windowHours: number = DEFAULT_RISK_ENGINE_CONFIG.thresholds.duplicateTimeWindowHours,
     distanceKm: number = DEFAULT_RISK_ENGINE_CONFIG.thresholds.duplicateDistanceKm
   ): DuplicateCheckResult {
     const reasons: string[] = [];
+    const nowMs = Date.now();
+    const windowMs = windowHours * 60 * 60 * 1000;
 
     for (const ec of existingCases) {
+      // FIX 2: Enforce the configured time window using incidentReport.createdAt
+      const caseCreatedAt = new Date(ec.incidentReport.createdAt).getTime();
+      if (isNaN(caseCreatedAt) || nowMs - caseCreatedAt > windowMs) {
+        continue; // Skip cases outside the time window
+      }
+
       const dist = calculateDistanceKm(
         newCase.location.latitude,
         newCase.location.longitude,
@@ -884,7 +892,10 @@ export class RiskEngine {
       const union = new Set([...s1, ...s2]).size;
       const jaccard = union > 0 ? intersection / union : 0;
 
-      if (dist <= distanceKm && sameSpecies && jaccard >= 0.5) {
+      // FIX 1: Lower geo-path Jaccard threshold from 0.5 → 0.4
+      // Rationale: 2 matching symptoms out of 5 (e.g. fever + vesicles_mouth) = Jaccard 0.4,
+      // which is sufficient to warrant a duplicate warning when GPS and species also match.
+      if (dist <= distanceKm && sameSpecies && jaccard >= 0.4) {
         reasons.push(
           `Matching case ${ec.id} located ${Math.round(dist * 1000)}m away with ${Math.round(jaccard * 100)}% symptom overlap`
         );
