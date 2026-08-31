@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, User, Calendar, FlaskConical } from 'lucide-react';
+import { ArrowLeft, MapPin, User, Calendar, FlaskConical, WifiOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '../components/ui/Badge';
 import { AIExplanationPanel } from '../components/ui/AIExplanationPanel';
 import { CaseTimeline } from '../components/ui/CaseTimeline';
 import { SYNTHETIC_CASES, SYMPTOM_CATALOG } from '../data/seed';
 import { getCaseById } from '../services/api';
+import { getOfflineIncidents } from '../services/offlineQueue';
 import type { CaseRecord } from '../types';
 
 const SPECIES_EMOJI: Record<string, string> = {
@@ -34,25 +35,103 @@ export function CaseDetailPage() {
     }
 
     setLoading(true);
-    getCaseById(id)
-      .then(res => {
-        if (!isMounted) return;
-        if (res) {
-          setCaseRecord(res);
-        } else {
+
+    async function fetchCase() {
+      try {
+        // 1. First lookup: Online / in-memory store
+        const onlineRes = await getCaseById(id!);
+        if (onlineRes && isMounted) {
+          setCaseRecord(onlineRes);
+          setLoading(false);
+          return;
+        }
+
+        // 2. Second lookup: IndexedDB offline queue
+        const offlineIncidents = await getOfflineIncidents();
+        const matchedOffline = offlineIncidents.find(
+          o => o.canonicalCaseId === id || o.localId === id
+        );
+
+        if (matchedOffline && isMounted) {
+          const mappedOfflineRecord: CaseRecord = {
+            id: matchedOffline.canonicalCaseId,
+            incidentReport: {
+              id: matchedOffline.localId,
+              reportedBy: matchedOffline.reportedByUserId,
+              reporterRole: matchedOffline.reporterRole,
+              createdAt: matchedOffline.createdAt,
+              updatedAt: matchedOffline.createdAt,
+              species: matchedOffline.primarySpecies,
+              totalAnimals: matchedOffline.totalAnimalsInHerd,
+              affectedAnimals: matchedOffline.affectedAnimalCount,
+              deadAnimals: matchedOffline.deadAnimalCount,
+              symptomIds: matchedOffline.symptomIds,
+              onsetDate: matchedOffline.onsetDate,
+              durationDays: matchedOffline.durationDays,
+              additionalNotes: matchedOffline.additionalNotes,
+              location: matchedOffline.location,
+              isVaccinated: matchedOffline.isVaccinated,
+              vaccineNames: matchedOffline.vaccineNames,
+              status: 'reported',
+            },
+            triageResult: {
+              id: `ra-${matchedOffline.canonicalCaseId}`,
+              caseId: matchedOffline.canonicalCaseId,
+              incidentId: matchedOffline.canonicalCaseId,
+              riskScore: 72,
+              riskBand: 'high',
+              factors: [
+                {
+                  factorName: 'Offline Field Triage',
+                  contribution: 30,
+                  evidence: 'Queued on device pending network sync',
+                  source: 'farmer_offline_app',
+                  direction: 'risk',
+                },
+              ],
+              modelVersion: 'sentinel-offline-preview-v1',
+              requiresVeterinaryAssessment: true,
+              recommendation: 'Stored locally. Awaiting online synchronization and veterinary triage assignment.',
+              disclaimer: 'Offline preliminary report — stored securely on-device.',
+              isSynthetic: false,
+              computedAt: matchedOffline.createdAt,
+            },
+            timeline: [
+              {
+                id: `tl-${matchedOffline.canonicalCaseId}-offline`,
+                caseId: matchedOffline.canonicalCaseId,
+                timestamp: matchedOffline.createdAt,
+                eventType: 'incident_reported',
+                actorId: matchedOffline.reportedByUserId,
+                actorRole: matchedOffline.reporterRole,
+                summary: `Offline incident reported on field device. Canonical ID: ${matchedOffline.canonicalCaseId}`,
+              },
+            ],
+            syncMetadata: matchedOffline.syncMetadata,
+          };
+
+          setCaseRecord(mappedOfflineRecord);
+          setLoading(false);
+          return;
+        }
+
+        // 3. Final fallback: SYNTHETIC_CASES
+        const fallback = SYNTHETIC_CASES.find(c => c.id === id) || null;
+        if (isMounted) {
+          setCaseRecord(fallback);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.warn('Error fetching case by id:', err);
+        if (isMounted) {
           const fallback = SYNTHETIC_CASES.find(c => c.id === id) || null;
           setCaseRecord(fallback);
+          setLoading(false);
         }
-      })
-      .catch(err => {
-        if (!isMounted) return;
-        console.warn('Error fetching case by id:', err);
-        const fallback = SYNTHETIC_CASES.find(c => c.id === id) || null;
-        setCaseRecord(fallback);
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+      }
+    }
+
+    fetchCase();
 
     return () => {
       isMounted = false;
@@ -102,7 +181,13 @@ export function CaseDetailPage() {
             <h1 className="text-xl font-800 text-gray-900">{caseRecord.id}</h1>
             <Badge variant={ir.status} />
             {tr && <Badge variant={tr.riskBand} />}
-            <span className="synthetic-watermark">Synthetic</span>
+            {caseRecord.syncMetadata?.syncStatus === 'PENDING' ? (
+              <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-700 border border-amber-200">
+                <WifiOff size={11} /> Pending Sync (Offline)
+              </span>
+            ) : (
+              <span className="synthetic-watermark">Synthetic</span>
+            )}
           </div>
           <p className="text-sm text-gray-500 mt-0.5">
             {SPECIES_EMOJI[ir.species]} {ir.species} ·{' '}
@@ -111,6 +196,19 @@ export function CaseDetailPage() {
           </p>
         </div>
       </div>
+
+      {/* Offline Pending Sync Notice Banner */}
+      {caseRecord.syncMetadata?.syncStatus === 'PENDING' && (
+        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-950 flex items-start gap-2.5 shadow-xs">
+          <WifiOff size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-700 text-amber-900">Stored in Local Offline Queue (Pending Sync)</p>
+            <p className="mt-0.5 text-amber-800">
+              This field incident report was captured while offline and is safely saved on this device. It will automatically synchronize to the district surveillance network as soon as an internet connection is established.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
