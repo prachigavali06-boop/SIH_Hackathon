@@ -9,12 +9,14 @@ import type {
   HealthCase, SymptomReport, RiskAssessment, OutbreakCluster,
   VetAssignment, FieldVisit, Sample, LabResult, Alert,
   ResponseAction, CaseRecord, IncidentReport, VetAssessment,
-  TimelineEvent, RiskBand, CaseStatus, AnimalSpecies, UserRole
+  TimelineEvent, RiskBand, CaseStatus, AnimalSpecies, UserRole,
+  VaccinationRecord, TreatmentRecord
 } from '../types';
 import { generateCanonicalCaseId } from '../types';
 import { SYNTHETIC_CASES, SYNTHETIC_NOTIFICATIONS } from '../data/seed';
 import { RiskEngine } from './aiRiskEngine';
 import { useNotificationStore } from '../store/notificationStore';
+import { enqueueOfflineAction, getUnsyncedOfflineItems, markItemSynced } from './offlineQueue';
 
 // In-Memory store fallback for hackathon offline demo mode
 let localCasesStore: CaseRecord[] = [...SYNTHETIC_CASES];
@@ -410,14 +412,21 @@ export async function assignVeterinarian(caseId: string, vetUserId: string, assi
 // API CONTRACT 7: Record Field Visit & Vet Assessment
 // ----------------------------------------------------------------
 export async function recordFieldVisit(visit: Omit<FieldVisit, 'id'>): Promise<FieldVisit> {
+  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+
   const newVisit: FieldVisit = {
     ...visit,
-    id: `fv-${visit.caseId}`,
+    id: `fv-${visit.caseId}-${Date.now()}`,
   };
+
+  if (isOffline) {
+    await enqueueOfflineAction('field_visit', visit.caseId, newVisit);
+  }
 
   const target = localCasesStore.find(c => c.id === visit.caseId);
   if (target) {
     target.vetAssessment = {
+      ...newVisit,
       vetId: visit.visitedByUserId,
       assessedAt: visit.visitedAt,
       clinicalFindings: visit.clinicalObservations,
@@ -425,8 +434,30 @@ export async function recordFieldVisit(visit: Omit<FieldVisit, 'id'>): Promise<F
       revisedRiskBand: visit.revisedRiskBand,
       requiresSample: visit.sampleRequired,
       quarantineRecommended: visit.quarantineRecommended,
+      notes: visit.notes,
+      photos: visit.photos || [],
     };
     target.incidentReport.status = 'vet_assessed';
+
+    // Update affected/dead if specified
+    if (visit.affectedCount !== undefined) {
+      target.incidentReport.affectedAnimals = visit.affectedCount;
+    }
+    if (visit.mortality !== undefined) {
+      target.incidentReport.deadAnimals = visit.mortality;
+    }
+
+    // Add timeline event
+    target.timeline.push({
+      id: `tl-${visit.caseId}-${Date.now()}`,
+      caseId: visit.caseId,
+      timestamp: visit.visitedAt || new Date().toISOString(),
+      eventType: 'field_visit',
+      actorId: visit.visitedByUserId,
+      actorRole: visit.visitorRole || 'veterinarian',
+      summary: `Clinical Field Visit recorded. Findings: ${visit.clinicalObservations.substring(0, 80)}...`,
+      details: visit.suspectedSyndrome ? `Suspected Syndrome: ${visit.suspectedSyndrome}` : undefined,
+    });
   }
 
   return newVisit;
@@ -436,20 +467,26 @@ export async function recordFieldVisit(visit: Omit<FieldVisit, 'id'>): Promise<F
 // API CONTRACT 8: Create Sample Collection
 // ----------------------------------------------------------------
 export async function createSample(sample: Omit<Sample, 'id' | 'barcode' | 'chainOfCustody'>): Promise<Sample> {
+  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
   const barcode = `SNT-${sample.caseId.replace(/[^0-9]/g, '')}`;
   const newSample: Sample = {
     ...sample,
     id: `smp-${sample.caseId}`,
     barcode,
+    transportStatus: sample.transportStatus || 'collected',
     chainOfCustody: [
       {
         step: 'Collected',
         timestamp: sample.collectedAt,
         handledBy: sample.collectedByUserId,
-        notes: 'Sample collected in cold chain',
+        notes: `Sample collected (${sample.sampleType}) from animal ${sample.animalId || 'Herd'}`,
       },
     ],
   };
+
+  if (isOffline) {
+    await enqueueOfflineAction('sample_collection', sample.caseId, newSample);
+  }
 
   const target = localCasesStore.find(c => c.id === sample.caseId);
   if (target) {
@@ -463,9 +500,197 @@ export async function createSample(sample: Omit<Sample, 'id' | 'barcode' | 'chai
       animalCount: sample.animalCountSampled,
     };
     target.incidentReport.status = 'sample_collected';
+
+    target.timeline.push({
+      id: `tl-${sample.caseId}-${Date.now()}`,
+      caseId: sample.caseId,
+      timestamp: sample.collectedAt || new Date().toISOString(),
+      eventType: 'sample_collected',
+      actorId: sample.collectedByUserId,
+      actorRole: 'field_worker',
+      summary: `Sample (${sample.sampleType}) collected for ${sample.animalId || 'Animal'}. Barcode: ${barcode}`,
+    });
   }
 
   return newSample;
+}
+
+// ----------------------------------------------------------------
+// API CONTRACT 8B: Record Animal Vaccination
+// ----------------------------------------------------------------
+export async function recordAnimalVaccination(record: Omit<VaccinationRecord, 'id'>): Promise<VaccinationRecord> {
+  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+  const newRecord: VaccinationRecord = {
+    ...record,
+    id: `vac-${Date.now()}`,
+  };
+
+  if (record.caseId && isOffline) {
+    await enqueueOfflineAction('vaccination_update', record.caseId, newRecord);
+  }
+
+  if (record.caseId) {
+    const target = localCasesStore.find(c => c.id === record.caseId);
+    if (target) {
+      target.vaccinationRecords = target.vaccinationRecords || [];
+      target.vaccinationRecords.push(newRecord);
+      target.incidentReport.isVaccinated = true;
+      target.incidentReport.vaccineNames = record.vaccineName;
+
+      target.timeline.push({
+        id: `tl-${record.caseId}-${Date.now()}`,
+        caseId: record.caseId,
+        timestamp: record.administeredAt || new Date().toISOString(),
+        eventType: 'vaccination_updated',
+        actorId: record.administeredByUserId,
+        actorRole: 'veterinarian',
+        summary: `Vaccination logged: ${record.vaccineName} (Batch: ${record.batchNumber || 'N/A'})`,
+      });
+    }
+  }
+
+  return newRecord;
+}
+
+// ----------------------------------------------------------------
+// API CONTRACT 8C: Record Treatment Prescription
+// ----------------------------------------------------------------
+export async function recordTreatment(treatment: Omit<TreatmentRecord, 'id'>): Promise<TreatmentRecord> {
+  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+  const newRecord: TreatmentRecord = {
+    ...treatment,
+    id: `tx-${Date.now()}`,
+  };
+
+  if (isOffline) {
+    await enqueueOfflineAction('treatment_record', treatment.caseId, newRecord);
+  }
+
+  const target = localCasesStore.find(c => c.id === treatment.caseId);
+  if (target) {
+    target.treatmentRecords = target.treatmentRecords || [];
+    target.treatmentRecords.push(newRecord);
+
+    if (target.vetAssessment) {
+      target.vetAssessment.treatmentRecommended = treatment.medicationName;
+    }
+
+    target.timeline.push({
+      id: `tl-${treatment.caseId}-${Date.now()}`,
+      caseId: treatment.caseId,
+      timestamp: treatment.administeredAt || new Date().toISOString(),
+      eventType: 'treatment_added',
+      actorId: treatment.prescribedByVetId,
+      actorRole: 'veterinarian',
+      summary: `Treatment prescribed: ${treatment.medicationName} (${treatment.dosage || 'Standard dosage'})`,
+    });
+  }
+
+  return newRecord;
+}
+
+// ----------------------------------------------------------------
+// API CONTRACT 8D: Operational Priority Escalation
+// ----------------------------------------------------------------
+export async function escalateCasePriority(
+  caseId: string,
+  newBand: RiskBand,
+  escalatedByUserId: string,
+  userRole: UserRole,
+  reason: string
+): Promise<CaseRecord | null> {
+  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+  if (isOffline) {
+    await enqueueOfflineAction('priority_escalation', caseId, { newBand, escalatedByUserId, reason });
+  }
+
+  const target = localCasesStore.find(c => c.id === caseId);
+  if (target) {
+    if (target.triageResult) {
+      target.triageResult.riskBand = newBand;
+    }
+
+    const actionText =
+      newBand === 'low' ? 'Routine Monitoring' :
+      newBand === 'moderate' ? 'Veterinary Review Requested' :
+      newBand === 'high' ? 'Priority Field Visit Dispatched' :
+      'CRITICAL District Level Escalation Initiated';
+
+    target.timeline.push({
+      id: `tl-${caseId}-${Date.now()}`,
+      caseId,
+      timestamp: new Date().toISOString(),
+      eventType: 'escalated',
+      actorId: escalatedByUserId,
+      actorRole: userRole,
+      summary: `Operational Priority updated to ${newBand.toUpperCase()} — ${actionText}`,
+      details: reason,
+    });
+
+    return target;
+  }
+  return null;
+}
+
+// ----------------------------------------------------------------
+// API CONTRACT 8E: Close Case
+// ----------------------------------------------------------------
+export async function closeCase(
+  caseId: string,
+  closedByUserId: string,
+  userRole: UserRole,
+  resolutionNotes: string
+): Promise<CaseRecord | null> {
+  const target = localCasesStore.find(c => c.id === caseId);
+  if (target) {
+    target.incidentReport.status = 'closed';
+    target.timeline.push({
+      id: `tl-${caseId}-${Date.now()}`,
+      caseId,
+      timestamp: new Date().toISOString(),
+      eventType: 'case_closed',
+      actorId: closedByUserId,
+      actorRole: userRole,
+      summary: `Case CLOSED & Contained. Resolution: ${resolutionNotes}`,
+    });
+    return target;
+  }
+  return null;
+}
+
+// ----------------------------------------------------------------
+// API CONTRACT 8F: Sync Offline Queue to Local Store
+// ----------------------------------------------------------------
+export async function syncOfflineQueueToApi(): Promise<{ syncedCount: number }> {
+  const unsynced = await getUnsyncedOfflineItems();
+  let count = 0;
+  for (const item of unsynced) {
+    try {
+      if (item.type === 'field_visit') {
+        await recordFieldVisit(item.payload);
+      } else if (item.type === 'sample_collection') {
+        await createSample(item.payload);
+      } else if (item.type === 'vaccination_update') {
+        await recordAnimalVaccination(item.payload);
+      } else if (item.type === 'treatment_record') {
+        await recordTreatment(item.payload);
+      } else if (item.type === 'priority_escalation') {
+        await escalateCasePriority(
+          item.caseId,
+          item.payload.newBand,
+          item.payload.escalatedByUserId,
+          'veterinarian',
+          item.payload.reason || 'Offline sync priority update'
+        );
+      }
+      await markItemSynced(item.id);
+      count++;
+    } catch (e) {
+      console.warn('Failed to sync offline item:', item, e);
+    }
+  }
+  return { syncedCount: count };
 }
 
 // ----------------------------------------------------------------
@@ -499,6 +724,15 @@ export async function submitLabResult(result: Omit<LabResult, 'id'>): Promise<La
   if (target) {
     target.labResult = newResult;
     target.incidentReport.status = result.status === 'positive' ? 'confirmed' : 'result_negative';
+    target.timeline.push({
+      id: `tl-${result.caseId}-${Date.now()}`,
+      caseId: result.caseId,
+      timestamp: result.completedAt || new Date().toISOString(),
+      eventType: 'lab_result',
+      actorId: result.labUserId,
+      actorRole: 'lab_tech',
+      summary: `Lab Result Submitted: ${result.testName} — ${result.status.toUpperCase()} (${result.pathogenConfirmed || 'No pathogen'})`,
+    });
   }
 
   return newResult;

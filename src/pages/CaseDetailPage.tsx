@@ -1,11 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, User, Calendar, FlaskConical, WifiOff } from 'lucide-react';
+import {
+    ArrowLeft,
+    MapPin,
+    Calendar,
+    FlaskConical,
+    WifiOff,
+    Stethoscope,
+    Syringe,
+    Pill,
+    Camera,
+    ShieldAlert
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '../components/ui/Badge';
 import { AIExplanationPanel } from '../components/ui/AIExplanationPanel';
 import { CaseTimeline } from '../components/ui/CaseTimeline';
-import { SYNTHETIC_CASES, SYMPTOM_CATALOG } from '../data/seed';
+import { SYNTHETIC_CASES, SYMPTOM_CATALOG, SYNTHETIC_CLUSTERS } from '../data/seed';
 import { getCaseById } from '../services/api';
 import { getOfflineIncidents } from '../services/offlineQueue';
 import type { CaseRecord } from '../types';
@@ -16,9 +27,9 @@ const SPECIES_EMOJI: Record<string, string> = {
 };
 
 const CHAIN_STEP_LABELS: Record<string, string> = {
-  Collected:  '🧪 Collected',
-  Dispatched: '🚐 Dispatched',
-  Received:   '🏥 Received at Lab',
+  Collected:  '🧪 Collected in Cold Chain',
+  Dispatched: '🚐 Dispatched to Lab',
+  Received:   '🏥 Received at Diagnostic Lab',
 };
 
 export function CaseDetailPage() {
@@ -159,14 +170,17 @@ export function CaseDetailPage() {
   }
 
   const { incidentReport: ir, triageResult: tr, vetAssessment: va,
-          sampleCollection: sc, labResult: lr, containmentActions: ca, timeline } = caseRecord;
+          sampleCollection: sc, labResult: lr, containmentActions: ca,
+          vaccinationRecords: vr, treatmentRecords: tx, timeline } = caseRecord;
 
   const symptoms = ir.symptomIds
     .map(sid => SYMPTOM_CATALOG.find(s => s.id === sid))
     .filter(Boolean);
 
+  const nearbyCluster = SYNTHETIC_CLUSTERS.find(cl => cl.caseIds.includes(caseRecord.id) || cl.affectedDistrict === ir.location.district);
+
   return (
-    <div className="space-y-5 page-enter max-w-5xl mx-auto">
+    <div className="space-y-5 page-enter max-w-5xl mx-auto pb-10">
       {/* Back + header */}
       <div className="flex items-start gap-3">
         <button
@@ -190,11 +204,17 @@ export function CaseDetailPage() {
             )}
           </div>
           <p className="text-sm text-gray-500 mt-0.5">
-            {SPECIES_EMOJI[ir.species]} {ir.species} ·{' '}
+            {SPECIES_EMOJI[ir.species]} {ir.species.toUpperCase()} Incident Report ·{' '}
             {ir.location.village}, {ir.location.district} ·{' '}
             Reported {format(new Date(ir.createdAt), 'dd MMM yyyy, HH:mm')}
           </p>
         </div>
+        <button
+          onClick={() => navigate('/vet-console')}
+          className="btn btn-primary bg-purple-700 hover:bg-purple-800 btn-sm gap-1"
+        >
+          <Stethoscope size={14} /> Open in Vet Console
+        </button>
       </div>
 
       {/* Offline Pending Sync Notice Banner */}
@@ -215,228 +235,306 @@ export function CaseDetailPage() {
         {/* Left column — details */}
         <div className="lg:col-span-2 space-y-4">
 
-          {/* Incident summary */}
-          <div className="card p-4">
-            <h2 className="section-title text-sm mb-4">Incident Report</h2>
+          {/* Incident Summary Card */}
+          <div className="card p-5 space-y-4">
+            <h2 className="section-title text-sm mb-2 flex items-center justify-between">
+              <span>Incident & Animal Details</span>
+              <span className="font-mono text-xs text-gray-400 font-bold">Animal Tag: TAG-MH-2026-{caseRecord.id.slice(-4)}</span>
+            </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+              <div>
+                <p className="text-xs text-gray-400 font-600 uppercase">Case ID</p>
+                <p className="font-700 font-mono text-purple-700 mt-0.5">{caseRecord.id}</p>
+              </div>
               <div>
                 <p className="text-xs text-gray-400 font-600 uppercase">Species</p>
                 <p className="font-600 capitalize mt-0.5">{ir.species}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 font-600 uppercase">Total Animals</p>
-                <p className="font-600 mt-0.5">{ir.totalAnimals}</p>
+                <p className="text-xs text-gray-400 font-600 uppercase">Total Herd Count</p>
+                <p className="font-600 mt-0.5">{ir.totalAnimals} animals</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 font-600 uppercase">Affected</p>
-                <p className="font-600 text-amber-700 mt-0.5">{ir.affectedAnimals}</p>
+                <p className="text-xs text-gray-400 font-600 uppercase">Affected Count</p>
+                <p className="font-600 text-amber-700 mt-0.5">{ir.affectedAnimals} affected</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 font-600 uppercase">Deaths</p>
-                <p className={`font-600 mt-0.5 ${ir.deadAnimals > 0 ? 'text-red-600' : 'text-gray-700'}`}>
-                  {ir.deadAnimals}
+                <p className="text-xs text-gray-400 font-600 uppercase">Mortality (Dead)</p>
+                <p className={`font-700 mt-0.5 ${ir.deadAnimals > 0 ? 'text-red-600' : 'text-gray-700'}`}>
+                  {ir.deadAnimals} dead
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 font-600 uppercase">Onset Date</p>
-                <p className="font-600 mt-0.5">{format(new Date(ir.onsetDate), 'dd MMM yyyy')}</p>
+                <p className="text-xs text-gray-400 font-600 uppercase">Onset & Duration</p>
+                <p className="font-600 mt-0.5">{format(new Date(ir.onsetDate), 'dd MMM')} ({ir.durationDays} day(s))</p>
               </div>
-              <div>
-                <p className="text-xs text-gray-400 font-600 uppercase">Duration</p>
-                <p className="font-600 mt-0.5">{ir.durationDays} day(s)</p>
-              </div>
-              <div className="col-span-2 sm:col-span-3">
-                <p className="text-xs text-gray-400 font-600 uppercase mb-1">Location</p>
-                <p className="font-600 flex items-center gap-1">
+              <div className="col-span-2 sm:col-span-3 border-t pt-2 mt-1">
+                <p className="text-xs text-gray-400 font-600 uppercase mb-1">Geographic Location</p>
+                <p className="font-600 text-xs flex items-center gap-1">
                   <MapPin size={13} className="text-red-500" />
                   {ir.location.village}, {ir.location.block}, {ir.location.district}, {ir.location.state}
+                  <span className="text-gray-400 font-mono text-[11px] ml-1">
+                    ({ir.location.latitude}, {ir.location.longitude})
+                  </span>
                 </p>
               </div>
-              <div className="col-span-2 sm:col-span-3">
-                <p className="text-xs text-gray-400 font-600 uppercase mb-1">Vaccination</p>
-                <p className="font-600">
-                  {ir.isVaccinated ? `✅ Vaccinated — ${ir.vaccineNames ?? 'Unknown vaccine'}` : '❌ Not Vaccinated'}
+              <div className="col-span-2 sm:col-span-3 border-t pt-2">
+                <p className="text-xs text-gray-400 font-600 uppercase mb-1">Vaccination Status</p>
+                <p className="font-600 text-xs">
+                  {ir.isVaccinated ? `✅ Vaccinated — ${ir.vaccineNames ?? 'Recorded'}` : '❌ Unvaccinated Herd'}
                 </p>
               </div>
             </div>
 
-            {/* Symptoms */}
-            <div className="mt-4">
+            {/* Symptoms list */}
+            <div className="mt-3">
               <p className="text-xs text-gray-400 font-600 uppercase mb-2">Reported Symptoms</p>
               <div className="flex flex-wrap gap-1.5">
                 {symptoms.map(s => s && (
-                  <span key={s.id} className="chip">{s.label}</span>
+                  <span key={s.id} className="chip bg-purple-50 text-purple-800 border-purple-200">{s.label}</span>
                 ))}
               </div>
             </div>
 
             {ir.additionalNotes && (
-              <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                <p className="text-xs text-gray-400 font-600 uppercase mb-1">Additional Notes</p>
-                <p className="text-sm text-gray-700">{ir.additionalNotes}</p>
+              <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 text-xs">
+                <p className="text-xs text-gray-400 font-600 uppercase mb-1">Reporter Notes</p>
+                <p className="text-gray-700">{ir.additionalNotes}</p>
               </div>
             )}
           </div>
 
-          {/* AI Triage */}
+          {/* AI Triage Breakdown */}
           {tr && (
             <div>
-              <h2 className="section-title text-sm mb-3">AI Triage Result</h2>
+              <h2 className="section-title text-sm mb-3">AI Triage Risk Breakdown</h2>
               <AIExplanationPanel triage={tr} />
             </div>
           )}
 
-          {/* Vet Assessment */}
+          {/* Veterinary Field Visit & Clinical Assessment */}
           {va && (
-            <div className="card p-4">
-              <h2 className="section-title text-sm mb-4">
-                <User size={15} className="text-purple-600" />
-                Veterinary Assessment
+            <div className="card p-5 space-y-3 bg-white">
+              <h2 className="section-title text-sm mb-3 flex items-center justify-between border-b pb-2">
+                <span className="flex items-center gap-2">
+                  <Stethoscope size={16} className="text-purple-700" />
+                  Veterinary Field Visit Record
+                </span>
+                <span className="text-xs text-purple-700 font-600 font-mono">
+                  {format(new Date(va.assessedAt), 'dd MMM yyyy, HH:mm')}
+                </span>
               </h2>
-              <div className="space-y-3 text-sm">
-                <div className="p-3 bg-purple-50 rounded-lg border border-purple-100">
-                  <p className="font-700 text-purple-800">{va.clinicalDiagnosis ?? 'Assessment recorded'}</p>
+
+              <div className="p-3 bg-purple-50 rounded-lg border border-purple-100 text-xs">
+                <p className="font-700 text-purple-900 text-sm">{va.clinicalDiagnosis ?? 'Clinical Field Visit Recorded'}</p>
+                {va.temperatureCelsius && (
+                  <p className="text-purple-700 font-600 mt-1">Body Temperature: {va.temperatureCelsius}°C</p>
+                )}
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-400 font-600 uppercase mb-1">Clinical Observations & Findings</p>
+                <p className="text-xs text-gray-800 leading-relaxed bg-gray-50 p-3 rounded border">{va.clinicalFindings}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <p className="text-xs text-gray-400 font-600 uppercase mb-0.5">AI Triage Agreement</p>
+                  <p className="font-600">{va.agreedWithAiRisk ? '✅ Agreed with AI Risk Score' : `⚠️ Revised Risk: ${va.revisedRiskBand}`}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 font-600 uppercase mb-1">Clinical Findings</p>
-                  <p className="text-gray-700">{va.clinicalFindings}</p>
+                  <p className="text-xs text-gray-400 font-600 uppercase mb-0.5">Quarantine Isolation</p>
+                  <p className="font-600">{va.quarantineRecommended ? '⚠️ Recommended Isolation' : '✅ Standard Monitoring'}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-xs text-gray-400 font-600 uppercase mb-1">AI Assessment Agreement</p>
-                    <p className="font-600">{va.agreedWithAiRisk ? '✅ Agreed' : '⚠️ Revised'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 font-600 uppercase mb-1">Quarantine</p>
-                    <p className="font-600">{va.quarantineRecommended ? '⚠️ Recommended' : '✅ Not Required'}</p>
-                  </div>
-                </div>
-                {va.treatmentRecommended && (
-                  <div>
-                    <p className="text-xs text-gray-400 font-600 uppercase mb-1">Treatment Recommended</p>
-                    <p className="text-gray-700">{va.treatmentRecommended}</p>
-                  </div>
-                )}
-                <p className="text-xs text-gray-400 font-mono">
-                  Assessed: {format(new Date(va.assessedAt), 'dd MMM yyyy, HH:mm')}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Sample & Lab */}
-          {sc && (
-            <div className="card p-4">
-              <h2 className="section-title text-sm mb-4">
-                <FlaskConical size={15} className="text-amber-600" />
-                Sample Chain of Custody
-              </h2>
-              <div className="flex items-center gap-2 mb-3 text-sm flex-wrap">
-                <span className="font-mono font-700 text-amber-700 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
-                  {sc.barcode}
-                </span>
-                <span className="text-gray-500">→ {sc.destinationLab}</span>
-              </div>
-              <div className="space-y-2">
-                {sc.chainOfCustody.map((step, i) => (
-                  <div key={i} className="flex items-start gap-3 text-sm">
-                    <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-700 flex-shrink-0 mt-0.5">
-                      {i + 1}
-                    </div>
-                    <div>
-                      <p className="font-600">{CHAIN_STEP_LABELS[step.step] ?? step.step}</p>
-                      <p className="text-xs text-gray-400">
-                        {step.handledBy} · {format(new Date(step.timestamp), 'dd MMM, HH:mm')}
-                      </p>
-                      {step.notes && <p className="text-xs text-gray-500 mt-0.5">{step.notes}</p>}
-                    </div>
-                  </div>
-                ))}
               </div>
 
-              {/* Lab result */}
-              {lr && (
-                <div className={`mt-4 p-3 rounded-lg border-l-4 ${
-                  lr.status === 'positive' ? 'bg-red-50 border-red-500' :
-                  lr.status === 'negative' ? 'bg-green-50 border-green-500' :
-                  'bg-gray-50 border-gray-300'
-                }`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="font-700 text-sm">Lab Result: {lr.testName}</p>
-                    <Badge variant={lr.status} size="sm" />
+              {/* Photos Gallery */}
+              {va.photos && va.photos.length > 0 && (
+                <div className="pt-2">
+                  <p className="text-xs text-gray-400 font-600 uppercase mb-2 flex items-center gap-1">
+                    <Camera size={13} /> Field Visit Photos
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto">
+                    {va.photos.map((url, i) => (
+                      <img key={i} src={url} alt={`Lesion ${i+1}`} className="w-24 h-20 object-cover rounded-lg border" />
+                    ))}
                   </div>
-                  {lr.pathogen && (
-                    <p className="text-sm font-600">
-                      Pathogen: {lr.pathogen}
-                      {lr.serotype && ` — Serotype ${lr.serotype}`}
-                    </p>
-                  )}
-                  {lr.notes && <p className="text-xs text-gray-500 mt-1">{lr.notes}</p>}
                 </div>
               )}
             </div>
           )}
 
-          {/* Containment actions */}
+          {/* Sample Chain of Custody */}
+          {sc && (
+            <div className="card p-5 space-y-3">
+              <h2 className="section-title text-sm mb-3 flex items-center gap-2 border-b pb-2">
+                <FlaskConical size={16} className="text-amber-600" />
+                Sample Collection & Transport Status
+              </h2>
+              <div className="flex items-center justify-between text-xs flex-wrap gap-2">
+                <span className="font-mono font-700 text-amber-900 bg-amber-100 px-2.5 py-1 rounded border border-amber-200">
+                  Barcode: {sc.barcode}
+                </span>
+                <span className="text-gray-600">Sample Type: <strong>{sc.sampleType}</strong></span>
+                <span className="text-gray-600">Lab: <strong>{sc.destinationLab}</strong></span>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                {sc.chainOfCustody.map((step, i) => (
+                  <div key={i} className="flex items-start gap-3 text-xs">
+                    <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-[10px] font-700 flex-shrink-0 mt-0.5">
+                      {i + 1}
+                    </div>
+                    <div>
+                      <p className="font-700 text-gray-800">{CHAIN_STEP_LABELS[step.step] ?? step.step}</p>
+                      <p className="text-gray-400 text-[11px]">
+                        {step.handledBy} · {format(new Date(step.timestamp), 'dd MMM, HH:mm')}
+                      </p>
+                      {step.notes && <p className="text-gray-600 text-[11px] mt-0.5">{step.notes}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Lab Result Outcome */}
+              {lr && (
+                <div className={`mt-3 p-3 rounded-lg border-l-4 ${
+                  lr.status === 'positive' ? 'bg-red-50 border-red-500 text-red-900' :
+                  lr.status === 'negative' ? 'bg-green-50 border-green-500 text-green-900' :
+                  'bg-gray-50 border-gray-300'
+                }`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-700 text-xs">Laboratory Test: {lr.testName}</p>
+                    <Badge variant={lr.status} size="sm" />
+                  </div>
+                  {lr.pathogen && (
+                    <p className="text-xs font-700">
+                      Confirmed Pathogen: {lr.pathogen}
+                      {lr.serotype && ` — Serotype ${lr.serotype}`}
+                    </p>
+                  )}
+                  {lr.notes && <p className="text-[11px] text-gray-600 mt-1">{lr.notes}</p>}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Vaccination & Treatment Records */}
+          {((vr && vr.length > 0) || (tx && tx.length > 0)) && (
+            <div className="card p-5 space-y-4">
+              <h2 className="section-title text-sm mb-2 border-b pb-2">Treatments & Vaccination History</h2>
+
+              {vr && vr.length > 0 && (
+                <div>
+                  <p className="text-xs font-700 text-blue-800 mb-2 flex items-center gap-1">
+                    <Syringe size={14} /> Vaccination History
+                  </p>
+                  <div className="space-y-1.5">
+                    {vr.map((v, idx) => (
+                      <div key={idx} className="p-2.5 bg-blue-50/50 rounded border text-xs flex justify-between">
+                        <div>
+                          <strong className="text-blue-900">{v.vaccineName}</strong>
+                          <p className="text-gray-500 text-[11px]">Batch: {v.batchNumber || 'N/A'}</p>
+                        </div>
+                        <span className="text-gray-500">{v.administeredAt}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {tx && tx.length > 0 && (
+                <div>
+                  <p className="text-xs font-700 text-emerald-800 mb-2 flex items-center gap-1">
+                    <Pill size={14} /> Prescribed Treatments
+                  </p>
+                  <div className="space-y-1.5">
+                    {tx.map((t, idx) => (
+                      <div key={idx} className="p-2.5 bg-emerald-50/50 rounded border text-xs">
+                        <strong className="text-emerald-900">{t.medicationName}</strong>
+                        <p className="text-gray-600 text-[11px]">Dosage: {t.dosage}</p>
+                        {t.instructions && <p className="text-gray-500 text-[11px]">{t.instructions}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Containment & Response Actions */}
           {ca && ca.length > 0 && (
-            <div className="card p-4">
-              <h2 className="section-title text-sm mb-4">Containment Actions</h2>
-              <div className="space-y-3">
+            <div className="card p-5 space-y-3">
+              <h2 className="section-title text-sm mb-3">Response & Containment Actions</h2>
+              <div className="space-y-2">
                 {ca.map(action => (
-                  <div key={action.id} className="p-3 rounded-lg bg-blue-50 border border-blue-100">
+                  <div key={action.id} className="p-3 rounded-lg bg-blue-50 border border-blue-100 text-xs">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="font-700 text-sm text-blue-900 capitalize">
+                      <p className="font-700 text-blue-900 capitalize">
                         {action.type.replace('_', ' ')}
                       </p>
-                      <Badge
-                        variant={
-                          action.status === 'completed' ? 'negative' :
-                          action.status === 'in_progress' ? 'pending' :
-                          action.status === 'planned' ? 'contained' : 'info'
-                        }
-                        label={action.status.replace('_', ' ')}
-                        size="sm"
-                      />
+                      <Badge variant="contained" label={action.status.replace('_', ' ')} size="sm" />
                     </div>
-                    <p className="text-xs text-blue-700 mt-1">{action.description}</p>
-                    {action.affectedVillages && (
-                      <div className="flex gap-1 flex-wrap mt-1.5">
-                        {action.affectedVillages.map(v => (
-                          <span key={v} className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">
-                            {v}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    <p className="text-blue-800 mt-1">{action.description}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
+
         </div>
 
-        {/* Right column — timeline */}
+        {/* Right column — Context, Vet Assignment, Timeline */}
         <div className="space-y-4">
+
+          {/* Assigned Vet & Status */}
+          <div className="card p-4 space-y-2">
+            <h2 className="section-title text-xs uppercase text-gray-500 font-700">Assigned Veterinarian</h2>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-purple-100 text-purple-800 font-700 flex items-center justify-center text-sm">
+                AD
+              </div>
+              <div className="text-xs">
+                <p className="font-700 text-gray-900">Dr. Anand Deshmukh</p>
+                <p className="text-gray-500">District Veterinary Officer (Nashik)</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Nearby Cluster Context */}
+          {nearbyCluster && (
+            <div className="card p-4 space-y-2 border-l-4 border-amber-500 bg-amber-50/50">
+              <h2 className="section-title text-xs uppercase text-amber-900 font-700 flex items-center gap-1.5">
+                <ShieldAlert size={14} className="text-amber-600" />
+                Nearby Outbreak Cluster
+              </h2>
+              <p className="text-xs font-700 text-amber-950">{nearbyCluster.clusterName}</p>
+              <p className="text-[11px] text-amber-800">
+                Primary Disease: <strong>{nearbyCluster.primaryDisease}</strong> · Active Cases: <strong>{nearbyCluster.activeCaseCount}</strong>
+              </p>
+              <p className="text-[11px] text-amber-700">
+                Response: {nearbyCluster.responseStatus}
+              </p>
+            </div>
+          )}
+
+          {/* Canonical Case Timeline */}
           <div className="card p-4">
-            <h2 className="section-title text-sm mb-4">
+            <h2 className="section-title text-sm mb-4 flex items-center gap-1.5">
               <Calendar size={15} className="text-gray-500" />
-              Case Timeline
+              Canonical Case Timeline
             </h2>
             <CaseTimeline events={timeline} />
           </div>
 
-          {/* Reporter info */}
-          <div className="card p-4">
-            <h2 className="section-title text-sm mb-3">Reporter</h2>
-            <div className="text-sm space-y-1">
-              <p className="text-gray-600">
-                Role: <span className="font-600 capitalize">{ir.reporterRole.replace('_', ' ')}</span>
-              </p>
-              <p className="text-gray-600">
-                District: <span className="font-600">{ir.location.district}</span>
-              </p>
-            </div>
+          {/* Reporter & Contact Info */}
+          <div className="card p-4 text-xs space-y-2">
+            <h2 className="section-title text-xs uppercase text-gray-500 font-700">Farmer & Reporter Info</h2>
+            <p className="text-gray-700 font-600">Reporter: Ramesh Kumar (Farmer)</p>
+            <p className="text-gray-500">Location: {ir.location.village}, {ir.location.block}</p>
+            <p className="text-gray-500 font-mono">Reported At: {format(new Date(ir.createdAt), 'dd MMM yyyy, HH:mm')}</p>
           </div>
+
         </div>
       </div>
     </div>

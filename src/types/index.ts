@@ -354,16 +354,28 @@ export interface RiskAssessment {
 
 export interface OutbreakCluster {
   id: string;
+  clusterId?: string;
   clusterName: string;
   centerLatitude: number;
   centerLongitude: number;
   radiusMeters: number;
   caseIds: string[];          // List of Canonical Case IDs
   primaryDisease: SuspectedDisease;
+  affectedState?: string;
   affectedDistrict: string;
   affectedBlocks: string[];
+  affectedVillages?: string[];
   riskLevel: RiskBand;
   activeCaseCount: number;
+  caseCount?: number;
+  affectedAnimals?: number;
+  riskScore?: number;
+  vaccinationCoverage?: number;
+  caseTrend?: string;
+  assignedVet?: string;
+  sampleStatus?: string;
+  labStatus?: string;
+  responseStatus?: string;
   detectedAt: string;
   status: 'active' | 'monitoring' | 'contained' | 'resolved';
 }
@@ -404,12 +416,21 @@ export interface FieldVisit {
   visitedAt: string;
   clinicalObservations: string;
   temperatureCelsius?: number;
+  observedSymptoms?: string[];
+  affectedCount?: number;
+  mortality?: number;
+  vaccinationVerified?: boolean;
+  vaccinationDetails?: string;
+  treatmentHistory?: string;
+  suspectedSyndrome?: string;
+  priority?: RiskBand;
   agreedWithAiRisk: boolean;
   revisedRiskBand?: RiskBand;
   clinicalDiagnosis?: SuspectedDisease; // Veterinary Clinical Opinion
   quarantineRecommended: boolean;
   sampleRequired: boolean;
   notes?: string;
+  photos?: string[];
 }
 
 export interface ChainStep {
@@ -422,12 +443,14 @@ export interface ChainStep {
 export interface Sample {
   id: string;
   caseId: string;             // Canonical Case ID
+  animalId?: string;          // Animal ID / Tag Number
   barcode: string;            // e.g. SNT-2026-00001
   sampleType: string;         // e.g. "Blood Serum", "Epithelial Tissue"
   collectedByUserId: string;
   collectedAt: string;
   animalCountSampled: number;
   destinationLabName: string;
+  transportStatus?: 'collected' | 'in_transit' | 'dispatched' | 'received';
   dispatchedAt?: string;
   receivedAt?: string;
   chainOfCustody: ChainStep[];
@@ -558,17 +581,18 @@ export type TriageResult = RiskAssessment & {
   incidentId: string;
 };
 
-export type VetAssessment = {
+export type VetAssessment = Partial<FieldVisit> & {
   vetId: string;
   assessedAt: string;
   clinicalFindings: string;
   agreedWithAiRisk: boolean;
   revisedRiskBand?: RiskBand;
-  clinicalDiagnosis?: string;
+  clinicalDiagnosis?: SuspectedDisease;
   requiresSample: boolean;
   treatmentRecommended?: string;
   quarantineRecommended: boolean;
   notes?: string;
+  photos?: string[];
 };
 
 export type SampleCollection = Sample & {
@@ -599,6 +623,8 @@ export type CaseRecord = {
   vetAssessment?: VetAssessment;
   sampleCollection?: SampleCollection;
   labResult?: LabResult;
+  vaccinationRecords?: VaccinationRecord[];
+  treatmentRecords?: TreatmentRecord[];
   containmentActions?: ContainmentAction[];
   timeline: TimelineEvent[];
   evidences?: Evidence[];
@@ -608,12 +634,25 @@ export type CaseRecord = {
 
 export type DashboardStats = {
   totalActiveCases: number;
+  activeSuspectedCases: number;
+  confirmedCases: number;
+  emergingClusters: number;
+  highRiskVillages: number;
+  vaccinationCoverage: number; // percentage e.g. 64.5
+  pendingSamples: number;
+  avgReportingTimeHours: number;
+  avgResponseTimeHours: number;
+  resolvedCases: number;
   highRiskCases: number;
   labPendingResults: number;
   confirmedOutbreaks: number;
   casesLast7Days: number[];
   speciesBreakdown: { species: AnimalSpecies; count: number }[];
+  riskBreakdown?: { riskBand: RiskBand; count: number }[];
   districtHotspots: { district: string; count: number; riskBand: RiskBand }[];
+  districtComparison?: { district: string; activeCases: number; confirmedCases: number; riskBand: RiskBand; vaccinationCoverage: number }[];
+  responseTimeBreakdown?: { stage: string; hours: number }[];
+  labTurnaroundBreakdown?: { stage: string; hours: number }[];
   isSynthetic: boolean;
 };
 

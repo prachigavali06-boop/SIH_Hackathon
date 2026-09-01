@@ -6,7 +6,7 @@
 
 import type {
   User, CaseRecord, DashboardStats, AppNotification,
-  Symptom, SuspectedDisease, AnimalSpecies
+  Symptom, SuspectedDisease, AnimalSpecies, CaseStatus, OutbreakCluster
 } from '../types';
 
 // ----------------------------------------------------------------
@@ -177,36 +177,173 @@ export const DISEASE_INFO: Record<SuspectedDisease, { name: string; species: Ani
 // MAP LOCATIONS (Nashik district synthetic hotspots)
 // ----------------------------------------------------------------
 
-export const SYNTHETIC_MAP_CASES = [
-  { id: 'LV-2026-00001', lat: 20.0059, lng: 73.7930, riskBand: 'high',     species: 'cattle',  count: 8,  disease: 'FMD',  village: 'Chandori' },
-  { id: 'LV-2026-00002', lat: 19.9975, lng: 73.8256, riskBand: 'moderate', species: 'buffalo', count: 3,  disease: 'LSD',  village: 'Niphad' },
-  { id: 'LV-2026-00003', lat: 20.0412, lng: 73.8512, riskBand: 'low',      species: 'goat',    count: 12, disease: 'PPR',  village: 'Devpur' },
-  { id: 'LV-2026-00004', lat: 19.9724, lng: 73.7650, riskBand: 'high',     species: 'cattle',  count: 5,  disease: 'BQ',   village: 'Pimpalnare' },
-  { id: 'LV-2026-00005', lat: 20.0189, lng: 73.8030, riskBand: 'moderate', species: 'buffalo', count: 2,  disease: 'HS',   village: 'Ozar' },
-] as const;
+export interface ExtendedMapCase {
+  id: string;
+  lat: number;
+  lng: number;
+  riskBand: 'low' | 'moderate' | 'high' | 'critical';
+  species: AnimalSpecies;
+  count: number;
+  disease: SuspectedDisease;
+  state: string;
+  district: string;
+  block: string;
+  village: string;
+  status: CaseStatus;
+  clusterId?: string;
+  reportedAt: string;
+}
+
+export const SYNTHETIC_MAP_CASES: ExtendedMapCase[] = [
+  { id: 'LV-2026-00001', lat: 20.0059, lng: 73.7930, riskBand: 'critical', species: 'cattle',  count: 8,  disease: 'FMD', state: 'Maharashtra', district: 'Nashik', block: 'Niphad', village: 'Chandori', status: 'confirmed', clusterId: 'CL-2026-001', reportedAt: '2026-08-22T09:14:00Z' },
+  { id: 'LV-2026-00002', lat: 19.9975, lng: 73.8256, riskBand: 'high',     species: 'buffalo', count: 3,  disease: 'LSD', state: 'Maharashtra', district: 'Nashik', block: 'Niphad', village: 'Niphad', status: 'vet_assessed', clusterId: 'CL-2026-001', reportedAt: '2026-08-24T07:45:00Z' },
+  { id: 'LV-2026-00003', lat: 20.0412, lng: 73.8512, riskBand: 'moderate', species: 'goat',    count: 12, disease: 'PPR', state: 'Maharashtra', district: 'Nashik', block: 'Sinnar', village: 'Devpur', status: 'sample_collected', clusterId: 'CL-2026-002', reportedAt: '2026-08-25T11:20:00Z' },
+  { id: 'LV-2026-00004', lat: 19.9724, lng: 73.7650, riskBand: 'high',     species: 'cattle',  count: 5,  disease: 'BQ',  state: 'Maharashtra', district: 'Nashik', block: 'Dindori', village: 'Pimpalnare', status: 'triaged', clusterId: 'CL-2026-001', reportedAt: '2026-08-23T14:10:00Z' },
+  { id: 'LV-2026-00005', lat: 20.0189, lng: 73.8030, riskBand: 'critical', species: 'buffalo', count: 4,  disease: 'HS',  state: 'Maharashtra', district: 'Nashik', block: 'Niphad', village: 'Ozar', status: 'confirmed', clusterId: 'CL-2026-001', reportedAt: '2026-08-24T16:05:00Z' },
+  { id: 'LV-2026-00006', lat: 19.5500, lng: 74.2000, riskBand: 'high',     species: 'cattle',  count: 9,  disease: 'FMD', state: 'Maharashtra', district: 'Ahmednagar', block: 'Sangamner', village: 'Vadner', status: 'sample_dispatched', clusterId: 'CL-2026-003', reportedAt: '2026-08-25T08:30:00Z' },
+  { id: 'LV-2026-00007', lat: 18.5204, lng: 73.8567, riskBand: 'moderate', species: 'sheep',   count: 15, disease: 'PPR', state: 'Maharashtra', district: 'Pune', block: 'Baramati', village: 'Shirsuphal', status: 'reported', clusterId: 'CL-2026-004', reportedAt: '2026-08-26T10:00:00Z' },
+  { id: 'LV-2026-00008', lat: 16.7050, lng: 74.2433, riskBand: 'low',      species: 'goat',    count: 2,  disease: 'CCPP', state: 'Maharashtra', district: 'Kolhapur', block: 'Kagal', village: 'Murgud', status: 'closed', reportedAt: '2026-08-21T12:00:00Z' },
+];
+
+export const SYNTHETIC_CLUSTERS: OutbreakCluster[] = [
+  {
+    id: 'CL-2026-001',
+    clusterId: 'CL-2026-001',
+    clusterName: 'Chandori-Ozar FMD & HS Hotspot Cluster',
+    centerLatitude: 20.0059,
+    centerLongitude: 73.7930,
+    radiusMeters: 4500,
+    caseIds: ['LV-2026-00001', 'LV-2026-00002', 'LV-2026-00004', 'LV-2026-00005'],
+    primaryDisease: 'FMD',
+    affectedState: 'Maharashtra',
+    affectedDistrict: 'Nashik',
+    affectedBlocks: ['Niphad', 'Dindori'],
+    affectedVillages: ['Chandori', 'Niphad', 'Ozar', 'Pimpalnare', 'Vadner'],
+    riskLevel: 'critical',
+    activeCaseCount: 14,
+    caseCount: 14,
+    affectedAnimals: 42,
+    riskScore: 88,
+    vaccinationCoverage: 52,
+    caseTrend: '+45% (Past 7 Days)',
+    assignedVet: 'Dr. Anand Deshmukh (+91 9001234567)',
+    sampleStatus: '6 Collected · 4 Dispatched · 2 In Processing',
+    labStatus: '1 RT-PCR Positive (FMDV Type O) · 1 Pending',
+    responseStatus: 'Ring Vaccination Drive Active (Target: 5,000 animals)',
+    detectedAt: '2026-08-22T10:00:00Z',
+    status: 'active',
+  },
+  {
+    id: 'CL-2026-002',
+    clusterId: 'CL-2026-002',
+    clusterName: 'Sinnar PPR Surveillance Belt',
+    centerLatitude: 20.0412,
+    centerLongitude: 73.8512,
+    radiusMeters: 3000,
+    caseIds: ['LV-2026-00003'],
+    primaryDisease: 'PPR',
+    affectedState: 'Maharashtra',
+    affectedDistrict: 'Nashik',
+    affectedBlocks: ['Sinnar'],
+    affectedVillages: ['Devpur', 'Wavi'],
+    riskLevel: 'moderate',
+    activeCaseCount: 5,
+    caseCount: 5,
+    affectedAnimals: 18,
+    riskScore: 58,
+    vaccinationCoverage: 68,
+    caseTrend: 'Stable (-5%)',
+    assignedVet: 'Dr. Ramesh Shinde (+91 9822001122)',
+    sampleStatus: '2 Collected · 2 Dispatched',
+    labStatus: 'Results Pending',
+    responseStatus: 'Advisory Issued · Vector Control Initiated',
+    detectedAt: '2026-08-25T11:00:00Z',
+    status: 'monitoring',
+  },
+  {
+    id: 'CL-2026-003',
+    clusterId: 'CL-2026-003',
+    clusterName: 'Sangamner FMD Border Corridor',
+    centerLatitude: 19.5500,
+    centerLongitude: 74.2000,
+    radiusMeters: 5000,
+    caseIds: ['LV-2026-00006'],
+    primaryDisease: 'FMD',
+    affectedState: 'Maharashtra',
+    affectedDistrict: 'Ahmednagar',
+    affectedBlocks: ['Sangamner'],
+    affectedVillages: ['Vadner', 'Akole'],
+    riskLevel: 'high',
+    activeCaseCount: 9,
+    caseCount: 9,
+    affectedAnimals: 27,
+    riskScore: 76,
+    vaccinationCoverage: 48,
+    caseTrend: '+20% (Past 7 Days)',
+    assignedVet: 'Dr. S. P. Kulkarni (+91 9423004455)',
+    sampleStatus: '3 Collected · 3 Dispatched',
+    labStatus: '1 Positive · 2 Processing',
+    responseStatus: 'Inter-district Movement Restriction Imposed',
+    detectedAt: '2026-08-25T08:30:00Z',
+    status: 'active',
+  },
+];
 
 // ----------------------------------------------------------------
 // DASHBOARD STATISTICS (synthetic)
 // ----------------------------------------------------------------
 
 export const SYNTHETIC_DASHBOARD_STATS: DashboardStats = {
-  totalActiveCases: 34,
-  highRiskCases: 7,
-  labPendingResults: 12,
+  totalActiveCases: 42,
+  activeSuspectedCases: 26,
+  confirmedCases: 16,
+  emergingClusters: 4,
+  highRiskVillages: 9,
+  vaccinationCoverage: 61.8,
+  pendingSamples: 14,
+  avgReportingTimeHours: 3.8,
+  avgResponseTimeHours: 16.2,
+  resolvedCases: 58,
+  highRiskCases: 11,
+  labPendingResults: 14,
   confirmedOutbreaks: 3,
-  casesLast7Days: [4, 7, 5, 9, 6, 11, 8],
+  casesLast7Days: [5, 8, 6, 11, 9, 14, 11],
   speciesBreakdown: [
-    { species: 'cattle',  count: 18 },
-    { species: 'buffalo', count: 8  },
-    { species: 'goat',    count: 5  },
+    { species: 'cattle',  count: 22 },
+    { species: 'buffalo', count: 11 },
+    { species: 'goat',    count: 6  },
     { species: 'sheep',   count: 2  },
     { species: 'pig',     count: 1  },
   ],
+  riskBreakdown: [
+    { riskBand: 'critical', count: 6 },
+    { riskBand: 'high',     count: 11 },
+    { riskBand: 'moderate', count: 17 },
+    { riskBand: 'low',      count: 8 },
+  ],
   districtHotspots: [
-    { district: 'Nashik',     count: 14, riskBand: 'high'     },
-    { district: 'Ahmednagar', count: 9,  riskBand: 'moderate' },
-    { district: 'Pune',       count: 6,  riskBand: 'moderate' },
+    { district: 'Nashik',     count: 18, riskBand: 'critical' },
+    { district: 'Ahmednagar', count: 12, riskBand: 'high'     },
+    { district: 'Pune',       count: 7,  riskBand: 'moderate' },
     { district: 'Kolhapur',   count: 5,  riskBand: 'low'      },
+  ],
+  districtComparison: [
+    { district: 'Nashik',     activeCases: 18, confirmedCases: 8, riskBand: 'critical', vaccinationCoverage: 52.4 },
+    { district: 'Ahmednagar', activeCases: 12, confirmedCases: 5, riskBand: 'high',     vaccinationCoverage: 58.0 },
+    { district: 'Pune',       activeCases: 7,  confirmedCases: 2, riskBand: 'moderate', vaccinationCoverage: 71.2 },
+    { district: 'Kolhapur',   activeCases: 5,  confirmedCases: 1, riskBand: 'low',      vaccinationCoverage: 84.5 },
+  ],
+  responseTimeBreakdown: [
+    { stage: 'Farmer Report to AI Triage', hours: 0.5 },
+    { stage: 'Triage to Vet Assignment',   hours: 3.3 },
+    { stage: 'Vet Assignment to Visit',   hours: 12.4 },
+    { stage: 'Visit to Sample Dispatch',   hours: 4.5 },
+  ],
+  labTurnaroundBreakdown: [
+    { stage: 'Sample Collection',  hours: 2.1 },
+    { stage: 'Cold Chain Transit', hours: 14.5 },
+    { stage: 'Lab Intake & Prep',  hours: 1.8 },
+    { stage: 'RT-PCR Run & Entry', hours: 6.2 },
   ],
   isSynthetic: true,
 };
@@ -269,7 +406,7 @@ export const SYNTHETIC_CASES: CaseRecord[] = [
       assessedAt: '2026-08-22T14:30:00Z',
       clinicalFindings: 'Classic vesicular lesions observed on tongue, dental pad, and coronary band of 7 animals. Profuse salivation.',
       agreedWithAiRisk: true,
-      clinicalDiagnosis: 'Suspected FMD — Requires Lab Confirmation',
+      clinicalDiagnosis: 'FMD',
       requiresSample: true,
       treatmentRecommended: 'Symptomatic treatment, mouth washes, hoof care.',
       quarantineRecommended: true,

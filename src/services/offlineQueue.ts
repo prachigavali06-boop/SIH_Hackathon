@@ -1,6 +1,7 @@
 // ============================================================
 // LIVESTOCK SENTINEL — Offline Storage & Sync Queue Service
-// Member 2 — Farmer & Field Reporting (IndexedDB via idb)
+// Combined: Farmer & Field Reporting (IndexedDB via idb) +
+// Field Worker & Veterinary Offline Operation Queue
 // ============================================================
 
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
@@ -121,7 +122,7 @@ if (typeof window !== 'undefined') {
 }
 
 // ----------------------------------------------------------------
-// Public Offline Queue API
+// Public Offline Queue API: Incident Reporting
 // ----------------------------------------------------------------
 
 let isSyncing = false;
@@ -326,3 +327,169 @@ export async function clearSyncedIncidents(): Promise<void> {
   }
   await notifyListeners();
 }
+
+// ----------------------------------------------------------------
+// Public Offline Queue API: Field Actions & Veterinary Operation
+// ----------------------------------------------------------------
+
+export interface QueuedOfflineItem {
+  id: string;
+  type: 'field_visit' | 'sample_collection' | 'vaccination_update' | 'treatment_record' | 'priority_escalation';
+  caseId: string;
+  payload: any;
+  createdAt: string;
+  synced: boolean;
+}
+
+const FIELD_QUEUE_DB_NAME = 'LivestockSentinelOfflineDB';
+const FIELD_QUEUE_DB_VERSION = 1;
+const FIELD_QUEUE_STORE_NAME = 'field_queue';
+
+// Open IndexedDB connection for field worker actions queue
+function openFieldQueueDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined' || !window.indexedDB) {
+      reject(new Error('IndexedDB is not supported in this environment.'));
+      return;
+    }
+
+    const request = window.indexedDB.open(FIELD_QUEUE_DB_NAME, FIELD_QUEUE_DB_VERSION);
+
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains(FIELD_QUEUE_STORE_NAME)) {
+        const store = db.createObjectStore(FIELD_QUEUE_STORE_NAME, { keyPath: 'id' });
+        store.createIndex('caseId', 'caseId', { unique: false });
+        store.createIndex('type', 'type', { unique: false });
+        store.createIndex('synced', 'synced', { unique: false });
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/**
+ * Save an offline field action into IndexedDB queue
+ */
+export async function enqueueOfflineAction(
+  type: QueuedOfflineItem['type'],
+  caseId: string,
+  payload: any
+): Promise<QueuedOfflineItem> {
+  const item: QueuedOfflineItem = {
+    id: `queue-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    type,
+    caseId,
+    payload,
+    createdAt: new Date().toISOString(),
+    synced: false,
+  };
+
+  try {
+    const db = await openFieldQueueDB();
+    const tx = db.transaction(FIELD_QUEUE_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(FIELD_QUEUE_STORE_NAME);
+    await new Promise<void>((resolve, reject) => {
+      const req = store.add(item);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  } catch (err) {
+    console.warn('IndexedDB write failed, falling back to localStorage queue:', err);
+    if (typeof localStorage !== 'undefined') {
+      const existingStr = localStorage.getItem('sentinel_offline_queue') || '[]';
+      const existing: QueuedOfflineItem[] = JSON.parse(existingStr);
+      existing.push(item);
+      localStorage.setItem('sentinel_offline_queue', JSON.stringify(existing));
+    }
+  }
+
+  return item;
+}
+
+/**
+ * Get all unsynced field action items from IndexedDB / localStorage
+ */
+export async function getUnsyncedOfflineItems(): Promise<QueuedOfflineItem[]> {
+  try {
+    const db = await openFieldQueueDB();
+    const tx = db.transaction(FIELD_QUEUE_STORE_NAME, 'readonly');
+    const store = tx.objectStore(FIELD_QUEUE_STORE_NAME);
+    const items: QueuedOfflineItem[] = await new Promise((resolve, reject) => {
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+
+    const unsyncedDb = items.filter((i) => !i.synced);
+
+    // Merge fallback localStorage queue
+    if (typeof localStorage !== 'undefined') {
+      const localStorageStr = localStorage.getItem('sentinel_offline_queue') || '[]';
+      const lsItems: QueuedOfflineItem[] = JSON.parse(localStorageStr);
+      const lsUnsynced = lsItems.filter((i) => !i.synced);
+
+      const merged = [...unsyncedDb];
+      for (const lsItem of lsUnsynced) {
+        if (!merged.some((m) => m.id === lsItem.id)) {
+          merged.push(lsItem);
+        }
+      }
+      return merged;
+    }
+    return unsyncedDb;
+  } catch (err) {
+    console.warn('Error reading unsynced items from IndexedDB:', err);
+    if (typeof localStorage !== 'undefined') {
+      const localStorageStr = localStorage.getItem('sentinel_offline_queue') || '[]';
+      const lsItems: QueuedOfflineItem[] = JSON.parse(localStorageStr);
+      return lsItems.filter((i) => !i.synced);
+    }
+    return [];
+  }
+}
+
+/**
+ * Remove or mark synced field action item as completed
+ */
+export async function markItemSynced(id: string): Promise<void> {
+  try {
+    const db = await openFieldQueueDB();
+    const tx = db.transaction(FIELD_QUEUE_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(FIELD_QUEUE_STORE_NAME);
+    await new Promise<void>((resolve, reject) => {
+      const req = store.delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  } catch (err) {
+    console.warn('Error deleting synced item from IndexedDB:', err);
+  }
+
+  if (typeof localStorage !== 'undefined') {
+    const localStorageStr = localStorage.getItem('sentinel_offline_queue') || '[]';
+    const lsItems: QueuedOfflineItem[] = JSON.parse(localStorageStr);
+    const updated = lsItems.filter((i) => i.id !== id);
+    localStorage.setItem('sentinel_offline_queue', JSON.stringify(updated));
+  }
+}
+
+/**
+ * Clear all items from field action queue
+ */
+export async function clearOfflineQueue(): Promise<void> {
+  try {
+    const db = await openFieldQueueDB();
+    const tx = db.transaction(FIELD_QUEUE_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(FIELD_QUEUE_STORE_NAME);
+    store.clear();
+  } catch (err) {
+    console.warn('Error clearing IndexedDB:', err);
+  }
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('sentinel_offline_queue');
+  }
+}
+
