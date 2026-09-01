@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { FarmerDashboardPage } from './pages/FarmerDashboardPage';
 import { ReportIncidentPage } from './pages/ReportIncidentPage';
 import { CasesPage } from './pages/CasesPage';
 import { CaseDetailPage } from './pages/CaseDetailPage';
@@ -26,6 +27,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Role-Aware Dashboard Router
+function RoleBasedDashboard() {
+  const { currentUser } = useAuthStore();
+
+  if (currentUser?.role === 'farmer') {
+    return <FarmerDashboardPage />;
+  }
+
+  return <DashboardPage />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -43,7 +55,7 @@ export default function App() {
           }
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="dashboard" element={<RoleBasedDashboard />} />
           <Route path="report" element={<ReportIncidentPage />} />
           <Route path="cases" element={<CasesPage />} />
           <Route path="cases/:id" element={<CaseDetailPage />} />

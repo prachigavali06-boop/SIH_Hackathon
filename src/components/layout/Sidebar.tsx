@@ -22,7 +22,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { path: '/dashboard',   label: 'Dashboard',     icon: LayoutDashboard, roles: ['gov_officer', 'admin', 'veterinarian'] },
+  { path: '/dashboard',   label: 'Dashboard',     icon: LayoutDashboard, roles: ['farmer', 'gov_officer', 'admin', 'veterinarian'] },
   { path: '/report',      label: 'Report Incident', icon: FileText,       roles: ['farmer', 'paravet', 'veterinarian', 'admin'] },
   { path: '/cases',       label: 'Case Tracker',  icon: ChevronRight,    roles: ['paravet', 'veterinarian', 'gov_officer', 'admin', 'farmer'] },
   { path: '/vet-console', label: 'Vet Console',   icon: Stethoscope,     roles: ['veterinarian', 'admin'] },
