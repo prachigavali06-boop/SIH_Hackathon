@@ -61,10 +61,75 @@ export const DEMO_USERS: User[] = [
     id: 'u-admin-01',
     name: 'Admin User',
     role: 'admin',
-    district: 'Maharashtra',
+    district: 'Nashik',
     avatarInitials: 'AU',
   },
 ];
+
+export type GovernmentLocationNode = {
+  name: string;
+  type: 'village' | 'locality' | 'town';
+};
+
+export type GovernmentTalukaNode = {
+  name: string;
+  localities: GovernmentLocationNode[];
+};
+
+export type GovernmentDistrictNode = {
+  name: string;
+  talukas: GovernmentTalukaNode[];
+};
+
+export const MAHARASHTRA_GOVERNMENT_LOCATIONS = {
+  state: 'Maharashtra',
+  districts: [
+    {
+      name: 'Nashik',
+      talukas: [
+        {
+          name: 'Dindori',
+          localities: [
+            { name: 'Antapur', type: 'village' },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'Solapur',
+      talukas: [
+        {
+          name: 'Barshi',
+          localities: [
+            { name: 'Padoshi', type: 'village' },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'Latur',
+      talukas: [
+        {
+          name: 'Latur',
+          localities: [
+            { name: 'Latur City', type: 'locality' },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'Ahilyanagar',
+      talukas: [
+        {
+          name: 'Ahilyanagar',
+          localities: [
+            { name: 'Ahilyanagar City', type: 'locality' },
+          ],
+        },
+      ],
+    },
+  ] satisfies GovernmentDistrictNode[],
+};
 
 export const DEMO_CREDENTIALS: Record<string, { password: string; userId: string }> = {
   'farmer@sentinel.demo':    { password: 'demo1234', userId: 'u-farmer-01' },
