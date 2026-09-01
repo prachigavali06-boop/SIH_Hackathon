@@ -3,42 +3,192 @@
 // Veterinary confirmation gate for AI risk & sample ordering
 // ============================================================
 
-import { useState } from 'react';
-import { Stethoscope, CheckCircle2, ShieldCheck, FlaskConical } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Stethoscope, CheckCircle2, ShieldCheck, FlaskConical, AlertTriangle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { SYNTHETIC_CASES, DISEASE_INFO } from '../data/seed';
 import type { CaseRecord, SuspectedDisease, RiskBand } from '../types';
 import { Badge } from '../components/ui/Badge';
 import { AIExplanationPanel } from '../components/ui/AIExplanationPanel';
+import { getCases, recordFieldVisit, createSample } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 export function VetConsolePage() {
+  const { currentUser } = useAuthStore();
+
+  // Live cases — seeded with SYNTHETIC_CASES so the queue is never empty
+  // on first render while getCases() resolves.
+  const [cases, setCases] = useState<CaseRecord[]>([...SYNTHETIC_CASES]);
   const [selectedCase, setSelectedCase] = useState<CaseRecord>(SYNTHETIC_CASES[0]);
 
   // Vet Form State
-  const [clinicalFindings, setClinicalFindings] = useState(
-    selectedCase.vetAssessment?.clinicalFindings ??
-    'Epithelial sloughing observed on dental pad and tongue. High salivation.'
-  );
-  const [agreedWithAi, setAgreedWithAi] = useState(selectedCase.vetAssessment?.agreedWithAiRisk ?? true);
+  const [clinicalFindings, setClinicalFindings] = useState('');
+  const [agreedWithAi, setAgreedWithAi] = useState(true);
   const [revisedRisk, setRevisedRisk] = useState<RiskBand>('high');
-  const [selectedDisease, setSelectedDisease] = useState<SuspectedDisease>(
-    selectedCase.vetAssessment?.clinicalDiagnosis?.includes('FMD') ? 'FMD' : 'FMD'
-  );
+  const [selectedDisease, setSelectedDisease] = useState<SuspectedDisease>('FMD');
   const [requiresSample, setRequiresSample] = useState(true);
   const [quarantineRecommended, setQuarantineRecommended] = useState(true);
   const [treatment, setTreatment] = useState('Symptomatic treatment, antiseptic mouth wash, isolation.');
   const [assessmentSubmitted, setAssessmentSubmitted] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Load live cases from localCasesStore on mount (no re-fetch on interaction).
+  // Prioritizes unassessed cases so new reports are highlighted immediately.
+  useEffect(() => {
+    let mounted = true;
+    getCases()
+      .then(liveCases => {
+        if (!mounted) return;
+        const list = liveCases.length > 0 ? liveCases : SYNTHETIC_CASES;
+        setCases(list);
+
+        // Prioritize unassessed case (no vetAssessment) first, or fallback to first case
+        const unassessedCase = list.find(c => !c.vetAssessment);
+        const targetCase = unassessedCase ?? list[0];
+
+        setSelectedCase(targetCase);
+        setClinicalFindings(targetCase.vetAssessment?.clinicalFindings ?? '');
+        setAgreedWithAi(targetCase.vetAssessment?.agreedWithAiRisk ?? true);
+        if (targetCase.vetAssessment?.revisedRiskBand) {
+          setRevisedRisk(targetCase.vetAssessment.revisedRiskBand);
+        }
+        if (targetCase.vetAssessment?.clinicalDiagnosis) {
+          const cd = targetCase.vetAssessment.clinicalDiagnosis;
+          const matched: SuspectedDisease =
+            cd.includes('LSD') ? 'LSD' :
+            cd.includes('PPR') ? 'PPR' :
+            cd.includes('BQ') ? 'BQ' :
+            cd.includes('Anthrax') ? 'Anthrax' :
+            cd.includes('Rabies') ? 'Rabies' : 'FMD';
+          setSelectedDisease(matched);
+        }
+      })
+      .catch(() => {
+        // SYNTHETIC_CASES already in state — nothing to do.
+      });
+    return () => { mounted = false; };
+  }, []);
 
   const handleSelectCase = (c: CaseRecord) => {
     setSelectedCase(c);
     setClinicalFindings(c.vetAssessment?.clinicalFindings ?? '');
     setAgreedWithAi(c.vetAssessment?.agreedWithAiRisk ?? true);
+    setRevisedRisk(c.vetAssessment?.revisedRiskBand ?? c.triageResult?.riskBand ?? 'high');
+    if (c.vetAssessment?.clinicalDiagnosis) {
+      const cd = c.vetAssessment.clinicalDiagnosis;
+      const matched: SuspectedDisease =
+        cd.includes('LSD') ? 'LSD' :
+        cd.includes('PPR') ? 'PPR' :
+        cd.includes('BQ') ? 'BQ' :
+        cd.includes('Anthrax') ? 'Anthrax' :
+        cd.includes('Rabies') ? 'Rabies' : 'FMD';
+      setSelectedDisease(matched);
+    }
+    setRequiresSample(c.vetAssessment?.requiresSample ?? true);
+    setQuarantineRecommended(c.vetAssessment?.quarantineRecommended ?? true);
+    setTreatment(c.vetAssessment?.notes ?? 'Symptomatic treatment, antiseptic mouth wash, isolation.');
     setAssessmentSubmitted(false);
+    setSaveError(null);
   };
 
-  const handleSaveAssessment = (e: React.FormEvent) => {
+  const handleSaveAssessment = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAssessmentSubmitted(true);
+    if (!selectedCase) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const visitDate = new Date().toISOString();
+      const vetUserId = currentUser?.id || 'u-vet-01';
+
+      // 1. Record Field Visit & Clinical Assessment in localCasesStore
+      await recordFieldVisit({
+        caseId: selectedCase.id,
+        visitedByUserId: vetUserId,
+        visitorRole: currentUser?.role || 'veterinarian',
+        visitedAt: visitDate,
+        clinicalObservations: clinicalFindings,
+        agreedWithAiRisk: agreedWithAi,
+        revisedRiskBand: agreedWithAi ? selectedCase.triageResult?.riskBand : revisedRisk,
+        clinicalDiagnosis: selectedDisease,
+        quarantineRecommended,
+        sampleRequired: requiresSample,
+        notes: treatment,
+      });
+
+      // 2. If sample required, create Sample record in localCasesStore
+      let createdSampleObj = undefined;
+      if (requiresSample) {
+        createdSampleObj = await createSample({
+          caseId: selectedCase.id,
+          sampleType: 'Blood Serum',
+          collectedByUserId: vetUserId,
+          collectedAt: visitDate,
+          animalCountSampled: selectedCase.incidentReport.affectedAnimals || 1,
+          destinationLabName: 'NRFMD Regional Lab, Pune',
+        });
+      }
+
+      // Update local state in VetConsolePage
+      const updatedAssessment = {
+        vetId: vetUserId,
+        assessedAt: visitDate,
+        clinicalFindings,
+        agreedWithAiRisk: agreedWithAi,
+        revisedRiskBand: agreedWithAi ? selectedCase.triageResult?.riskBand : revisedRisk,
+        requiresSample,
+        quarantineRecommended,
+      };
+      const updatedStatus = requiresSample ? 'sample_collected' : 'vet_assessed';
+
+      setCases(prev => prev.map(c => {
+        if (c.id !== selectedCase.id) return c;
+        return {
+          ...c,
+          vetAssessment: updatedAssessment,
+          sampleCollection: createdSampleObj ? {
+            ...createdSampleObj,
+            sampleId: createdSampleObj.id,
+            collectedBy: createdSampleObj.collectedByUserId,
+            destinationLabName: createdSampleObj.destinationLabName,
+            destinationLab: createdSampleObj.destinationLabName,
+            animalCountSampled: createdSampleObj.animalCountSampled,
+            animalCount: createdSampleObj.animalCountSampled,
+          } : c.sampleCollection,
+          incidentReport: {
+            ...c.incidentReport,
+            status: updatedStatus,
+          },
+        };
+      }));
+
+      setSelectedCase(prev => ({
+        ...prev,
+        vetAssessment: updatedAssessment,
+        sampleCollection: createdSampleObj ? {
+          ...createdSampleObj,
+          sampleId: createdSampleObj.id,
+          collectedBy: createdSampleObj.collectedByUserId,
+          destinationLabName: createdSampleObj.destinationLabName,
+          destinationLab: createdSampleObj.destinationLabName,
+          animalCountSampled: createdSampleObj.animalCountSampled,
+          animalCount: createdSampleObj.animalCountSampled,
+        } : prev.sampleCollection,
+        incidentReport: {
+          ...prev.incidentReport,
+          status: updatedStatus,
+        },
+      }));
+
+      setAssessmentSubmitted(true);
+    } catch (err) {
+      console.error('Failed to save veterinary assessment:', err);
+      setSaveError('Failed to save assessment. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -73,10 +223,10 @@ export function VetConsolePage() {
         {/* Priority Case Queue */}
         <div className="space-y-3">
           <h2 className="text-xs font-700 text-gray-500 uppercase tracking-wider">
-            Assigned Priority Queue ({SYNTHETIC_CASES.length})
+            Assigned Priority Queue ({cases.length})
           </h2>
 
-          {SYNTHETIC_CASES.map(c => {
+          {cases.map(c => {
             const isSelected = c.id === selectedCase.id;
             const tr = c.triageResult;
             return (
@@ -152,6 +302,16 @@ export function VetConsolePage() {
                 <div>
                   <strong>Veterinary Assessment Recorded!</strong>
                   <p className="text-xs">Escalated to Sample Collection & Laboratory Tracking.</p>
+                </div>
+              </div>
+            )}
+
+            {saveError && (
+              <div className="alert-banner danger flex items-center gap-2">
+                <AlertTriangle size={16} />
+                <div>
+                  <strong>Error Saving Assessment</strong>
+                  <p className="text-xs">{saveError}</p>
                 </div>
               </div>
             )}
@@ -271,10 +431,20 @@ export function VetConsolePage() {
             <div className="flex justify-end gap-3 pt-2">
               <button
                 type="submit"
-                className="btn btn-primary bg-purple-700 hover:bg-purple-800"
+                disabled={isSaving}
+                className="btn btn-primary bg-purple-700 hover:bg-purple-800 disabled:opacity-60"
               >
-                <CheckCircle2 size={16} />
-                Save Assessment & Order Lab Sample
+                {isSaving ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Saving Assessment...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={16} />
+                    Save Assessment & Order Lab Sample
+                  </>
+                )}
               </button>
             </div>
           </form>

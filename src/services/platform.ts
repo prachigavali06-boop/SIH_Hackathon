@@ -6,6 +6,7 @@
 // ============================================================
 
 import { supabase, isSupabaseConfigured } from './supabase';
+import { useNotificationStore } from '../store/notificationStore';
 import type {
   CaseEvent, CaseEventType,
   Evidence, EvidenceType,
@@ -82,7 +83,6 @@ const MOVEMENT_ROUTES_STORE: MovementRoute[] = [
     createdAt: '2026-08-01T00:00:00Z',
   },
 ];
-const ALERTS_EXTENDED_STORE: Alert[] = [];
 
 // ----------------------------------------------------------------
 // SERVICE 1: Case Event Timeline
@@ -377,8 +377,10 @@ export async function createAlert(params: {
   actionPath?: string;
   actionLabel?: string;
 }): Promise<Alert> {
+  const alertId = `alert-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+  const now = new Date().toISOString();
   const alert: Alert = {
-    id: `alert-${Date.now()}`,
+    id: alertId,
     alertType: params.alertType,
     caseId: params.caseId,
     clusterId: params.clusterId,
@@ -391,11 +393,12 @@ export async function createAlert(params: {
     isRead: false,
     actionPath: params.actionPath,
     actionLabel: params.actionLabel,
-    createdAt: new Date().toISOString(),
-    timestamp: new Date().toISOString(),
+    createdAt: now,
+    timestamp: now,
   };
 
-  ALERTS_EXTENDED_STORE.push(alert);
+  // Persist directly into the shared notification store (persisted in localStorage)
+  useNotificationStore.getState().addNotification(alert);
 
   if (params.caseId) {
     await addCaseEvent({
