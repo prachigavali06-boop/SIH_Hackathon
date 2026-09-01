@@ -14,6 +14,7 @@ import { LabTrackerPage } from './pages/LabTrackerPage';
 import { OutbreakMapPage } from './pages/OutbreakMapPage';
 import { AlertsPage } from './pages/AlertsPage';
 import { AdminPage } from './pages/AdminPage';
+import { VaccinationPage } from './pages/VaccinationPage';
 import { useAuthStore } from './store/authStore';
 
 // Protected Route Guard
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="map" element={<OutbreakMapPage />} />
           <Route path="alerts" element={<AlertsPage />} />
           <Route path="admin" element={<AdminPage />} />
+          <Route path="vaccination" element={<VaccinationPage />} />
         </Route>
 
         {/* Fallback */}

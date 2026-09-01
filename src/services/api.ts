@@ -14,10 +14,10 @@ import type {
 import { generateCanonicalCaseId } from '../types';
 import { SYNTHETIC_CASES, SYNTHETIC_NOTIFICATIONS } from '../data/seed';
 import { RiskEngine } from './aiRiskEngine';
+import { useNotificationStore } from '../store/notificationStore';
 
 // In-Memory store fallback for hackathon offline demo mode
 let localCasesStore: CaseRecord[] = [...SYNTHETIC_CASES];
-let localAlertsStore: Alert[] = [...SYNTHETIC_NOTIFICATIONS];
 
 const MANDATORY_SAFETY_DISCLAIMER =
   'This is an AI-assisted risk assessment based on reported symptoms. It is NOT a definitive diagnosis. Veterinary confirmation is mandatory before any official action.';
@@ -508,7 +508,9 @@ export async function submitLabResult(result: Omit<LabResult, 'id'>): Promise<La
 // API CONTRACT 11: Retrieve Alerts
 // ----------------------------------------------------------------
 export async function retrieveAlerts(district?: string): Promise<Alert[]> {
-  return localAlertsStore.filter(a => {
+  const storeAlerts = useNotificationStore.getState().notifications;
+  const list = storeAlerts && storeAlerts.length > 0 ? storeAlerts : SYNTHETIC_NOTIFICATIONS;
+  return list.filter(a => {
     if (district && a.targetDistrict && a.targetDistrict !== district) return false;
     return true;
   });

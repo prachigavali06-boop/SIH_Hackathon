@@ -5,7 +5,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, Stethoscope, FlaskConical,
-  Map, Bell, Settings, ChevronRight, Shield
+  Map, Bell, Settings, ChevronRight, Shield, Syringe,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuthStore } from '../../store/authStore';
@@ -26,8 +26,9 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/report',      label: 'Report Incident', icon: FileText,       roles: ['farmer', 'paravet', 'veterinarian', 'admin'] },
   { path: '/cases',       label: 'Case Tracker',  icon: ChevronRight,    roles: ['paravet', 'veterinarian', 'gov_officer', 'admin', 'farmer'] },
   { path: '/vet-console', label: 'Vet Console',   icon: Stethoscope,     roles: ['veterinarian', 'admin'] },
-  { path: '/lab-tracker', label: 'Lab Tracker',   icon: FlaskConical,    roles: ['lab_tech', 'veterinarian', 'gov_officer', 'admin'] },
-  { path: '/map',         label: 'Outbreak Map',  icon: Map,             roles: ['gov_officer', 'veterinarian', 'admin', 'paravet'] },
+  { path: '/lab-tracker',   label: 'Lab Tracker',         icon: FlaskConical, roles: ['lab_tech', 'veterinarian', 'gov_officer', 'admin'] },
+  { path: '/vaccination',   label: 'Vaccination Analytics', icon: Syringe,     roles: ['gov_officer', 'veterinarian', 'lab_tech', 'admin'] },
+  { path: '/map',           label: 'Outbreak Map',         icon: Map,          roles: ['gov_officer', 'veterinarian', 'admin', 'paravet'] },
   { path: '/alerts',      label: 'Alerts',         icon: Bell,            roles: ['farmer', 'paravet', 'veterinarian', 'lab_tech', 'gov_officer', 'admin'] },
   { path: '/admin',       label: 'Admin',          icon: Settings,        roles: ['admin'] },
 ];
