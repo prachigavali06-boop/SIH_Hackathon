@@ -16,12 +16,14 @@ import { SYNTHETIC_CASES } from '../data/seed';
 import { getCases, submitLabResult, updateSample } from '../services/api';
 import { createAlert } from '../services/platform';
 import { useNotificationStore } from '../store/notificationStore';
+import { useLanguage } from '../i18n/useLanguage';
 
 // Chain of custody ordered steps
 const CHAIN_STEPS = ['Collected', 'Dispatched', 'Received', 'Testing'] as const;
 type ChainStep = typeof CHAIN_STEPS[number];
 
 export function LabTrackerPage() {
+  const { t } = useLanguage();
   // Live case list
   const [cases, setCases] = useState<CaseRecord[]>([...SYNTHETIC_CASES]);
   const [loadingCases, setLoadingCases] = useState(true);
@@ -313,12 +315,12 @@ export function LabTrackerPage() {
             Laboratory Tracking &amp; Chain of Custody
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Sample Verification · Cold Chain Tracking · Confirmatory Diagnostic Entry
+            {t('labTracker.subtitle', 'Molecular Testing, Serology & Confirmatory Pathogen Identification')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="badge badge-pending">Lab Technician Portal</span>
-          <span className="synthetic-watermark">Synthetic Data</span>
+          <span className="synthetic-watermark">{t('common.syntheticData', 'Synthetic Data')}</span>
         </div>
       </div>
 
@@ -326,7 +328,7 @@ export function LabTrackerPage() {
       {loadingCases && (
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <Loader2 size={16} className="animate-spin" />
-          Loading samples…
+          {t('common.loading', 'Loading...')}
         </div>
       )}
 

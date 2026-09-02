@@ -23,6 +23,7 @@ import { SurveillanceAnalytics } from '../components/dashboard/SurveillanceAnaly
 import { IntegrationStatusCard } from '../components/dashboard/IntegrationStatusCard';
 import { AlertBanner } from '../components/ui/AlertBanner';
 import { Badge } from '../components/ui/Badge';
+import { useLanguage } from '../i18n/useLanguage';
 
 import {
   SYNTHETIC_MAP_CASES, SYNTHETIC_CLUSTERS,
@@ -42,6 +43,7 @@ const INITIAL_FILTERS: FilterState = {
 };
 
 export function DashboardPage() {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
   const [selectedCluster, setSelectedCluster] = useState<OutbreakCluster | null>(SYNTHETIC_CLUSTERS[0]);
   const [activeTab, setActiveTab] = useState<'all' | 'map' | 'analytics' | 'explainability'>('all');
@@ -111,21 +113,15 @@ export function DashboardPage() {
         <div>
           <h1 className="section-title text-xl flex items-center gap-2">
             <Activity size={24} className="text-green-700" />
-            Government Veterinary Animal Health Command Center
+            {t('dashboard.title', 'Government Animal Health Command Center')}
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Surveillance Jurisdiction:{' '}
-            <strong className="text-gray-800">
-              {filters.state === 'all' ? 'All States' : filters.state}
-              {filters.district !== 'all' && ` → ${filters.district}`}
-              {filters.block !== 'all' && ` → ${filters.block}`}
-              {filters.village !== 'all' && ` → ${filters.village}`}
-            </strong>{' '}
-            · <span className="synthetic-watermark">Synthetic Surveillance Data</span>
+            {t('dashboard.subtitle', 'Integrated Multi-Source Real-Time Biosurveillance & Epidemic Risk Intelligence')} ·{' '}
+            <span className="synthetic-watermark">{t('common.syntheticData', 'Synthetic Surveillance Data')}</span>
           </p>
         </div>
         <div className="text-xs text-gray-500 font-mono bg-white px-3 py-1.5 rounded-lg border shadow-sm">
-          Last Synced: {format(new Date(), 'dd MMM yyyy, HH:mm')}
+          {t('common.synced', 'Last Synced')}: {format(new Date(), 'dd MMM yyyy, HH:mm')}
         </div>
       </div>
 

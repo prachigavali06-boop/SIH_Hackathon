@@ -11,6 +11,7 @@ import { HighRiskExplainabilityPanel } from '../components/dashboard/HighRiskExp
 import { SYNTHETIC_MAP_CASES, SYNTHETIC_CLUSTERS } from '../data/seed';
 import { retrieveClusters } from '../services/api';
 import type { OutbreakCluster } from '../types';
+import { useLanguage } from '../i18n/useLanguage';
 
 const INITIAL_FILTERS: FilterState = {
   state: 'all',
@@ -24,6 +25,7 @@ const INITIAL_FILTERS: FilterState = {
 };
 
 export function OutbreakMapPage() {
+  const { t } = useLanguage();
   const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
   const [clusters, setClusters] = useState<OutbreakCluster[]>(SYNTHETIC_CLUSTERS);
   const [selectedCluster, setSelectedCluster] = useState<OutbreakCluster | null>(SYNTHETIC_CLUSTERS[0]);
@@ -82,8 +84,8 @@ export function OutbreakMapPage() {
             Spatio-Temporal GIS Outbreak Radar
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            DBSCAN Spatio-Temporal Radius Clustering · OpenStreetMap + Leaflet ·{' '}
-            <span className="synthetic-watermark">Synthetic Surveillance GIS Data</span>
+            {t('outbreakMap.subtitle', 'DBSCAN cluster detection, livestock movement routes & quarantine zones')} ·{' '}
+            <span className="synthetic-watermark">{t('common.syntheticData', 'Synthetic Surveillance Data')}</span>
           </p>
         </div>
 

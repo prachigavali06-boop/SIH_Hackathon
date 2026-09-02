@@ -10,6 +10,7 @@ import { ShieldCheck, AlertTriangle, Filter, Loader2, TrendingUp, TrendingDown }
 import { format } from 'date-fns';
 import { getVaccinationCoverage } from '../services/platform';
 import type { VaccinationCoverage, AnimalSpecies } from '../types';
+import { useLanguage } from '../i18n/useLanguage';
 
 // Species options for filter pill
 const SPECIES_OPTIONS: { value: AnimalSpecies | 'all'; label: string }[] = [
@@ -39,6 +40,7 @@ function coverageBand(pct: number): { label: string; cls: string } {
 }
 
 export function VaccinationPage() {
+  const { t } = useLanguage();
   const [allCoverage, setAllCoverage] = useState<VaccinationCoverage[]>([]);
   const [loading, setLoading] = useState(true);
   const [speciesFilter, setSpeciesFilter] = useState<AnimalSpecies | 'all'>('all');
@@ -77,18 +79,18 @@ export function VaccinationPage() {
             Vaccination Coverage &amp; Vulnerability Map
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Village/Block Coverage · 75% Risk Threshold · Ring Vaccination Progress
+            {t('vaccination.subtitle', 'Targeted ring vaccination tracking and vulnerable population mapping')}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="synthetic-watermark">Synthetic Data</span>
+          <span className="synthetic-watermark">{t('common.syntheticData', 'Synthetic Data')}</span>
         </div>
       </div>
 
       {/* Summary stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="card p-4 text-center">
-          <p className="text-xs text-gray-500 font-600 uppercase tracking-wider">Overall Coverage</p>
+          <p className="text-xs text-gray-500 font-600 uppercase tracking-wider">{t('vaccination.overallCoverage', 'Overall Coverage')}</p>
           <p className={`text-3xl font-800 mt-1 ${overallPct >= 75 ? 'text-green-600' : 'text-red-600'}`}>
             {overallPct}%
           </p>
@@ -100,7 +102,7 @@ export function VaccinationPage() {
           <p className="text-xs text-gray-400 mt-1">village/block records</p>
         </div>
         <div className="card p-4 text-center border-red-200 bg-red-50/30">
-          <p className="text-xs text-red-600 font-600 uppercase tracking-wider">Vulnerable Locations</p>
+          <p className="text-xs text-red-600 font-600 uppercase tracking-wider">{t('vaccination.vulnerablePockets', 'Vulnerable Pockets')}</p>
           <p className="text-3xl font-800 mt-1 text-red-600">{vulnerableCount}</p>
           <p className="text-xs text-gray-400 mt-1">below 75% threshold</p>
         </div>

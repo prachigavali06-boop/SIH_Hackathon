@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Mic, Square, Play, Pause, RotateCcw, AlertCircle, Sparkles, Check } from 'lucide-react';
+import { useLanguage } from '../../i18n/useLanguage';
 
 interface VoiceRecorderProps {
   onRecordingComplete: (data: {
@@ -23,7 +24,9 @@ export function VoiceRecorder({
   initialTranscript = '',
   isHindi = false,
 }: VoiceRecorderProps) {
+  const { t, language } = useLanguage();
   const [isRecording, setIsRecording] = useState(false);
+
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -122,7 +125,7 @@ export function VoiceRecorder({
           const recognition = new SpeechRec();
           recognition.continuous = true;
           recognition.interimResults = true;
-          recognition.lang = isHindi ? 'hi-IN' : 'en-IN';
+          recognition.lang = language === 'mr' ? 'mr-IN' : language === 'hi' ? 'hi-IN' : 'en-IN';
 
           recognition.onresult = (event: any) => {
             let currentText = '';
@@ -289,7 +292,7 @@ export function VoiceRecorder({
                 onClick={stopRecording}
                 className="btn btn-sm bg-red-600 hover:bg-red-700 text-white flex items-center gap-1 shadow-sm"
               >
-                <Square size={14} /> {isHindi ? 'रोकें' : 'Stop'}
+                <Square size={14} /> {t('reportIncident.stopRecording', 'Stop')}
               </button>
             ) : (
               <button
@@ -329,7 +332,7 @@ export function VoiceRecorder({
               onClick={resetRecording}
               className="btn btn-sm btn-secondary flex items-center gap-1 text-xs text-gray-600"
             >
-              <RotateCcw size={12} /> {isHindi ? 'पुनः रिकॉर्ड करें' : 'Re-record'}
+              <RotateCcw size={12} /> {t('reportIncident.reRecord', 'Re-record')}
             </button>
           </div>
         )}

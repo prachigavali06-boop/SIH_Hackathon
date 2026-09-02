@@ -22,6 +22,7 @@ import { Badge } from '../components/ui/Badge';
 import { AIExplanationPanel } from '../components/ui/AIExplanationPanel';
 import { CaseTimeline } from '../components/ui/CaseTimeline';
 import { useAuthStore } from '../store/authStore';
+import { useLanguage } from '../i18n/useLanguage';
 
 const SAMPLE_TYPES = [
   'Epithelial Tissue & Vesicular Fluid',
@@ -49,6 +50,7 @@ const SYNDROME_CATEGORIES = [
 ];
 
 export function VetConsolePage() {
+  const { t } = useLanguage();
   const { currentUser } = useAuthStore();
   const isAuthorized = currentUser?.role === 'veterinarian' || currentUser?.role === 'field_worker' || currentUser?.role === 'paravet' || currentUser?.role === 'admin';
 
@@ -343,7 +345,7 @@ export function VetConsolePage() {
             Veterinary & Field Worker Console
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Human-in-the-Loop Investigation · Structured Field Visits & Sample Management
+            {t('vetConsole.subtitle', 'Clinical Examination, Sample Dispatch, Treatment & Containment')}
           </p>
         </div>
 
@@ -353,7 +355,7 @@ export function VetConsolePage() {
             isOnline ? 'bg-green-50 text-green-800 border-green-200' : 'bg-amber-50 text-amber-900 border-amber-300'
           }`}>
             {isOnline ? <Wifi size={14} className="text-green-600" /> : <WifiOff size={14} className="text-amber-600" />}
-            <span>{isOnline ? 'Online' : 'Offline Mode Active'}</span>
+            <span>{isOnline ? t('common.online', 'Online') : t('common.offlineMode', 'Offline Mode Active')}</span>
             {unsyncedCount > 0 && (
               <span className="ml-1 bg-amber-600 text-white px-1.5 py-0.5 rounded-full font-bold text-[10px]">
                 {unsyncedCount} Queued
@@ -368,7 +370,7 @@ export function VetConsolePage() {
               className="btn btn-sm btn-primary bg-amber-600 hover:bg-amber-700 text-white gap-1"
             >
               <RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
-              {isSyncing ? 'Syncing...' : 'Sync Offline Queue'}
+              {isSyncing ? t('common.syncing', 'Syncing...') : t('common.syncNow', 'Sync Offline Queue')}
             </button>
           )}
 

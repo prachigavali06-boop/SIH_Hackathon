@@ -10,27 +10,29 @@ import {
 import { clsx } from 'clsx';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationStore } from '../../store/notificationStore';
+import { useLanguage } from '../../i18n/useLanguage';
 import { RoleSwitcher } from './RoleSwitcher';
 import type { UserRole } from '../../types';
 
 interface NavItem {
   path: string;
-  label: string;
+  translationKey: string;
+  defaultLabel: string;
   icon: React.ElementType;
   roles: UserRole[];
   badge?: number;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { path: '/dashboard',   label: 'Dashboard',     icon: LayoutDashboard, roles: ['farmer', 'gov_officer', 'admin', 'veterinarian'] },
-  { path: '/report',      label: 'Report Incident', icon: FileText,       roles: ['farmer', 'paravet', 'veterinarian', 'admin'] },
-  { path: '/cases',       label: 'Case Tracker',  icon: ChevronRight,    roles: ['paravet', 'veterinarian', 'gov_officer', 'admin', 'farmer'] },
-  { path: '/vet-console', label: 'Vet Console',   icon: Stethoscope,     roles: ['veterinarian', 'admin'] },
-  { path: '/lab-tracker',   label: 'Lab Tracker',         icon: FlaskConical, roles: ['lab_tech', 'veterinarian', 'gov_officer', 'admin'] },
-  { path: '/vaccination',   label: 'Vaccination Analytics', icon: Syringe,     roles: ['gov_officer', 'veterinarian', 'lab_tech', 'admin'] },
-  { path: '/map',           label: 'Outbreak Map',         icon: Map,          roles: ['gov_officer', 'veterinarian', 'admin', 'paravet'] },
-  { path: '/alerts',      label: 'Alerts',         icon: Bell,            roles: ['farmer', 'paravet', 'veterinarian', 'lab_tech', 'gov_officer', 'admin'] },
-  { path: '/admin',       label: 'Admin',          icon: Settings,        roles: ['admin'] },
+  { path: '/dashboard',   translationKey: 'sidebar.dashboard',      defaultLabel: 'Dashboard',             icon: LayoutDashboard, roles: ['farmer', 'gov_officer', 'admin', 'veterinarian'] },
+  { path: '/report',      translationKey: 'sidebar.reportIncident', defaultLabel: 'Report Incident',       icon: FileText,        roles: ['farmer', 'paravet', 'veterinarian', 'admin'] },
+  { path: '/cases',       translationKey: 'sidebar.caseTracker',    defaultLabel: 'Case Tracker',          icon: ChevronRight,    roles: ['paravet', 'veterinarian', 'gov_officer', 'admin', 'farmer'] },
+  { path: '/vet-console', translationKey: 'sidebar.vetConsole',     defaultLabel: 'Vet Console',           icon: Stethoscope,     roles: ['veterinarian', 'admin'] },
+  { path: '/lab-tracker',   translationKey: 'sidebar.labTracker',   defaultLabel: 'Lab Tracker',           icon: FlaskConical,    roles: ['lab_tech', 'veterinarian', 'gov_officer', 'admin'] },
+  { path: '/vaccination',   translationKey: 'sidebar.vaccination',  defaultLabel: 'Vaccination Analytics', icon: Syringe,         roles: ['gov_officer', 'veterinarian', 'lab_tech', 'admin'] },
+  { path: '/map',           translationKey: 'sidebar.outbreakMap',  defaultLabel: 'Outbreak Map',          icon: Map,             roles: ['gov_officer', 'veterinarian', 'admin', 'paravet'] },
+  { path: '/alerts',      translationKey: 'sidebar.alerts',         defaultLabel: 'Alerts',                icon: Bell,            roles: ['farmer', 'paravet', 'veterinarian', 'lab_tech', 'gov_officer', 'admin'] },
+  { path: '/admin',       translationKey: 'sidebar.admin',          defaultLabel: 'Admin',                 icon: Settings,        roles: ['admin'] },
 ];
 
 interface SidebarProps {
@@ -41,6 +43,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { currentUser } = useAuthStore();
   const { unreadCount } = useNotificationStore();
+  const { t, tRole } = useLanguage();
 
   const visibleItems = NAV_ITEMS.filter(item =>
     !currentUser || item.roles.includes(currentUser.role)
@@ -72,8 +75,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <Shield size={20} className="text-green-300" />
           </div>
           <div className="min-w-0">
-            <p className="text-white font-800 text-sm leading-tight">Livestock Sentinel</p>
-            <p className="text-green-300/60 text-xs">Animal Health Response</p>
+            <p className="text-white font-800 text-sm leading-tight">{t('common.appName', 'Livestock Sentinel')}</p>
+            <p className="text-green-300/60 text-xs">{t('common.appSubtitle', 'Animal Health Response')}</p>
           </div>
         </div>
 
@@ -86,7 +89,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </div>
               <div className="min-w-0">
                 <p className="text-white text-xs font-600 truncate">{currentUser.name}</p>
-                <p className="text-green-300/60 text-xs capitalize">{currentUser.role.replace('_', ' ')}</p>
+                <p className="text-green-300/60 text-xs capitalize">{tRole(currentUser.role)}</p>
               </div>
             </div>
           </div>
@@ -97,6 +100,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <ul className="space-y-0.5">
             {visibleItems.map(item => {
               const isAlerts = item.path === '/alerts';
+              const label = t(item.translationKey, item.defaultLabel);
               return (
                 <li key={item.path}>
                   <NavLink
@@ -107,7 +111,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     }
                   >
                     <item.icon size={16} className="flex-shrink-0" />
-                    <span className="flex-1">{item.label}</span>
+                    <span className="flex-1">{label}</span>
                     {isAlerts && unreadCount > 0 && (
                       <span className="bg-red-500 text-white text-xs font-700 rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
                         {unreadCount}
@@ -122,13 +126,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Demo role switcher */}
         <RoleSwitcher />
-
-        {/* Footer */}
-        <div className="px-4 py-3 border-t border-white/10">
-          <p className="text-green-300/40 text-xs text-center">
-            Hackathon Prototype · SIH 2025
-          </p>
-        </div>
       </aside>
     </>
   );

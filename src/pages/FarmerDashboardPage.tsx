@@ -28,6 +28,7 @@ import { Badge } from '../components/ui/Badge';
 import { RiskScoreRing } from '../components/ui/RiskScoreRing';
 import { useAuthStore } from '../store/authStore';
 import { useNotificationStore } from '../store/notificationStore';
+import { useLanguage } from '../i18n/useLanguage';
 import { getCases } from '../services/api';
 import {
   getOfflineIncidents,
@@ -53,6 +54,7 @@ export function FarmerDashboardPage() {
   const navigate = useNavigate();
   const { currentUser } = useAuthStore();
   const { notifications, unreadCount } = useNotificationStore();
+  const { t, tSpecies, tRiskBand, tCaseStatus } = useLanguage();
 
   const [cases, setCases] = useState<CaseRecord[]>([]);
   const [offlineIncidents, setOfflineIncidents] = useState<OfflineIncidentPayload[]>([]);
@@ -235,7 +237,7 @@ export function FarmerDashboardPage() {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-2 bg-emerald-900/40 px-3 py-1 rounded-full text-xs font-600 text-emerald-200 border border-emerald-500/30 mb-2">
-              <span>🌾 Farmer Care Portal</span>
+              <span>{t('farmerDashboard.badge', '🌾 Farmer Care Portal')}</span>
               {currentUser?.village && (
                 <>
                   <span>•</span>
@@ -244,10 +246,10 @@ export function FarmerDashboardPage() {
               )}
             </div>
             <h1 className="text-2xl sm:text-3xl font-800 tracking-tight text-white">
-              Welcome back, {currentUser?.name || 'Farmer'}!
+              {t('farmerDashboard.welcome', 'Welcome back')}, {currentUser?.name || t('roles.farmer', 'Farmer')}!
             </h1>
             <p className="text-emerald-100 text-sm mt-1.5 max-w-2xl leading-relaxed">
-              Monitor your livestock health, track reported incidents, and stay informed about important alerts and veterinary visits.
+              {t('farmerDashboard.subtitle', 'Monitor your livestock health, track reported incidents, and stay informed about important alerts and veterinary visits.')}
             </p>
           </div>
 
@@ -265,10 +267,10 @@ export function FarmerDashboardPage() {
               ) : (
                 <WifiOff size={14} className="text-amber-300" />
               )}
-              <span>{isOnline ? 'Online' : 'Offline Mode'}</span>
+              <span>{isOnline ? t('common.online', 'Online') : t('common.offline', 'Offline')}</span>
               {pendingSyncCount > 0 && (
                 <span className="bg-amber-500 text-slate-900 px-1.5 py-0.2 rounded-full font-800 text-[10px]">
-                  {pendingSyncCount} waiting
+                  {pendingSyncCount} {t('farmerDashboard.pendingSync', 'waiting')}
                 </span>
               )}
             </div>
@@ -280,7 +282,7 @@ export function FarmerDashboardPage() {
                 className="btn btn-sm bg-white text-emerald-900 hover:bg-emerald-50 font-700 shadow-sm gap-1 text-xs"
               >
                 <RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
-                {isSyncing ? 'Syncing...' : 'Sync Now'}
+                {isSyncing ? t('common.syncing', 'Syncing...') : t('common.syncNow', 'Sync Now')}
               </button>
             )}
           </div>
@@ -298,7 +300,7 @@ export function FarmerDashboardPage() {
         >
           <div className="flex items-center justify-between text-gray-500">
             <span className="text-xs font-700 uppercase tracking-wider text-gray-500">
-              My Active Reports
+              {t('farmerDashboard.myActiveReports', 'My Active Reports')}
             </span>
             <FileText size={18} className="text-emerald-600" />
           </div>
@@ -306,7 +308,7 @@ export function FarmerDashboardPage() {
             <span className="text-2xl sm:text-3xl font-800 text-gray-900">
               {loading ? '-' : activeReportsCount}
             </span>
-            <span className="text-xs text-gray-500">cases under care</span>
+            <span className="text-xs text-gray-500">{t('farmerDashboard.casesUnderCare', 'cases under care')}</span>
           </div>
         </div>
 
@@ -317,7 +319,7 @@ export function FarmerDashboardPage() {
         >
           <div className="flex items-center justify-between text-gray-500">
             <span className="text-xs font-700 uppercase tracking-wider text-gray-500">
-              High Risk Reports
+              {t('farmerDashboard.highRiskReports', 'High Risk Reports')}
             </span>
             <AlertTriangle size={18} className="text-red-500" />
           </div>
@@ -325,7 +327,7 @@ export function FarmerDashboardPage() {
             <span className="text-2xl sm:text-3xl font-800 text-red-600">
               {loading ? '-' : highRiskCount}
             </span>
-            <span className="text-xs text-gray-500">urgent attention</span>
+            <span className="text-xs text-gray-500">{t('farmerDashboard.urgentAttention', 'urgent attention')}</span>
           </div>
         </div>
 
@@ -336,7 +338,7 @@ export function FarmerDashboardPage() {
         >
           <div className="flex items-center justify-between text-gray-500">
             <span className="text-xs font-700 uppercase tracking-wider text-gray-500">
-              Under Review
+              {t('farmerDashboard.underReview', 'Under Review')}
             </span>
             <Clock size={18} className="text-amber-500" />
           </div>
@@ -344,7 +346,7 @@ export function FarmerDashboardPage() {
             <span className="text-2xl sm:text-3xl font-800 text-amber-700">
               {loading ? '-' : pendingReviewCount}
             </span>
-            <span className="text-xs text-gray-500">vet / lab review</span>
+            <span className="text-xs text-gray-500">{t('farmerDashboard.vetLabReview', 'vet / lab review')}</span>
           </div>
         </div>
 
@@ -355,7 +357,7 @@ export function FarmerDashboardPage() {
         >
           <div className="flex items-center justify-between text-gray-500">
             <span className="text-xs font-700 uppercase tracking-wider text-gray-500">
-              District Alerts
+              {t('farmerDashboard.districtAlerts', 'District Alerts')}
             </span>
             <Bell size={18} className="text-blue-500" />
           </div>
@@ -363,7 +365,7 @@ export function FarmerDashboardPage() {
             <span className="text-2xl sm:text-3xl font-800 text-blue-700">
               {unreadCount}
             </span>
-            <span className="text-xs text-gray-500">unread advisories</span>
+            <span className="text-xs text-gray-500">{t('farmerDashboard.unreadAdvisories', 'unread advisories')}</span>
           </div>
         </div>
       </div>
@@ -374,7 +376,7 @@ export function FarmerDashboardPage() {
       <div className="card p-5 bg-gradient-to-r from-emerald-50 via-white to-green-50 border border-emerald-100">
         <h2 className="text-xs font-800 uppercase tracking-wider text-emerald-900 mb-3 flex items-center gap-1.5">
           <Activity size={15} className="text-emerald-700" />
-          Quick Actions
+          {t('farmerDashboard.quickActions', 'Quick Actions')}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Action 1: Report New Incident */}
@@ -387,8 +389,8 @@ export function FarmerDashboardPage() {
                 <PlusCircle size={20} className="text-white" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-800">Report Sick Animal</p>
-                <p className="text-[11px] text-emerald-100 font-normal">Fast photo & symptom triage</p>
+                <p className="text-sm font-800">{t('farmerDashboard.reportSickAnimal', 'Report Sick Animal')}</p>
+                <p className="text-[11px] text-emerald-100 font-normal">{t('farmerDashboard.reportSubtext', 'Fast photo & symptom triage')}</p>
               </div>
             </div>
             <ChevronRight size={18} className="text-emerald-200 group-hover:translate-x-0.5 transition-transform" />
@@ -404,8 +406,8 @@ export function FarmerDashboardPage() {
                 <FileText size={18} />
               </div>
               <div className="text-left">
-                <p className="text-sm font-800">Track My Reports</p>
-                <p className="text-[11px] text-gray-500 font-normal">View case history & status</p>
+                <p className="text-sm font-800">{t('farmerDashboard.trackMyReports', 'Track My Reports')}</p>
+                <p className="text-[11px] text-gray-500 font-normal">{t('farmerDashboard.trackSubtext', 'View case history & status')}</p>
               </div>
             </div>
             <ChevronRight size={18} className="text-gray-400 group-hover:translate-x-0.5 transition-transform" />
@@ -426,8 +428,8 @@ export function FarmerDashboardPage() {
                 )}
               </div>
               <div className="text-left">
-                <p className="text-sm font-800">Village Health Alerts</p>
-                <p className="text-[11px] text-gray-500 font-normal">Outbreak notices & advisories</p>
+                <p className="text-sm font-800">{t('farmerDashboard.villageHealthAlerts', 'Village Health Alerts')}</p>
+                <p className="text-[11px] text-gray-500 font-normal">{t('farmerDashboard.villageAlertsSubtext', 'Outbreak notices & advisories')}</p>
               </div>
             </div>
             <ChevronRight size={18} className="text-gray-400 group-hover:translate-x-0.5 transition-transform" />
@@ -444,14 +446,14 @@ export function FarmerDashboardPage() {
           <div className="flex items-center justify-between">
             <h2 className="section-title text-base flex items-center gap-2">
               <FileText size={18} className="text-emerald-700" />
-              My Recent Reports
+              {t('farmerDashboard.myRecentReports', 'My Recent Reports')}
             </h2>
             {allFarmerCases.length > 0 && (
               <button
                 onClick={() => navigate('/cases')}
                 className="text-xs font-700 text-emerald-700 hover:text-emerald-900 flex items-center gap-1"
               >
-                View all ({allFarmerCases.length}) <ArrowRight size={13} />
+                {t('farmerDashboard.viewAll', 'View all')} ({allFarmerCases.length}) <ArrowRight size={13} />
               </button>
             )}
           </div>
@@ -459,23 +461,23 @@ export function FarmerDashboardPage() {
           {loading ? (
             <div className="card p-8 text-center text-gray-400 text-sm space-y-2">
               <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
-              <p>Loading your reports...</p>
+              <p>{t('farmerDashboard.loadingReports', 'Loading your reports...')}</p>
             </div>
           ) : allFarmerCases.length === 0 ? (
             <div className="card p-8 text-center space-y-3 bg-white border border-gray-100">
               <div className="w-12 h-12 bg-emerald-50 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-xl">
                 🐄
               </div>
-              <h3 className="font-800 text-gray-900 text-base">No incidents reported yet</h3>
+              <h3 className="font-800 text-gray-900 text-base">{t('farmerDashboard.noIncidentsTitle', 'No incidents reported yet')}</h3>
               <p className="text-gray-500 text-xs max-w-md mx-auto">
-                All your animals look healthy! If an animal shows symptoms like fever, blisters, or reduced feeding, report it immediately for fast AI triage.
+                {t('farmerDashboard.noIncidentsDesc', 'All your animals look healthy! If an animal shows symptoms like fever, blisters, or reduced feeding, report it immediately for fast AI triage.')}
               </p>
               <button
                 onClick={() => navigate('/report')}
-                className="btn btn-primary bg-emerald-700 hover:bg-emerald-800 btn-sm gap-1.5 shadow-sm mt-2"
+                className="btn btn-primary bg-emerald-700 hover:bg-emerald-800 btn-sm gap-1.5 shadow-sm mt-2 font-700"
               >
                 <PlusCircle size={15} />
-                Report First Incident
+                {t('farmerDashboard.reportFirstIncident', 'Report First Incident')}
               </button>
             </div>
           ) : (
@@ -503,19 +505,19 @@ export function FarmerDashboardPage() {
                             </span>
                             {c.isOfflinePending ? (
                               <span className="inline-flex items-center gap-1 text-[10px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-700 border border-amber-200">
-                                <WifiOff size={10} /> Pending Sync
+                                <WifiOff size={10} /> {t('farmerDashboard.pendingSync', 'Pending Sync')}
                               </span>
                             ) : (
-                              <Badge variant={ir.status} size="sm" />
+                              <Badge variant={ir.status} label={tCaseStatus(ir.status)} size="sm" />
                             )}
                           </div>
                           <h3 className="text-sm font-800 text-gray-900 capitalize mt-0.5 truncate group-hover:text-emerald-700 transition-colors">
-                            {ir.species} Incident · {ir.affectedAnimals} of {ir.totalAnimals} affected
+                            {tSpecies(ir.species)} · {ir.affectedAnimals} / {ir.totalAnimals} {t('farmerDashboard.affectedOf', 'affected')}
                           </h3>
                         </div>
                       </div>
 
-                      {tr && <Badge variant={tr.riskBand} size="sm" />}
+                      {tr && <Badge variant={tr.riskBand} label={tRiskBand(tr.riskBand)} size="sm" />}
                     </div>
 
                     <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 flex-wrap gap-2">
@@ -524,7 +526,7 @@ export function FarmerDashboardPage() {
                         {ir.location.village || 'Local Village'}, {ir.location.district}
                       </span>
                       <span className="text-gray-400">
-                        Reported {format(new Date(ir.createdAt), 'dd MMM yyyy, HH:mm')}
+                        {t('common.date', 'Date')}: {format(new Date(ir.createdAt), 'dd MMM yyyy, HH:mm')}
                       </span>
                     </div>
                   </div>
@@ -543,10 +545,10 @@ export function FarmerDashboardPage() {
             <div className="flex items-center justify-between border-b pb-3">
               <h2 className="text-xs font-800 uppercase tracking-wider text-purple-900 flex items-center gap-1.5">
                 <ShieldCheck size={16} className="text-purple-700" />
-                AI Risk Assessment
+                {t('farmerDashboard.aiRiskAssessment', 'AI Risk Assessment')}
               </h2>
               <span className="text-[10px] font-700 bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">
-                Early Warning
+                {t('farmerDashboard.earlyWarning', 'Early Warning')}
               </span>
             </div>
 
@@ -554,9 +556,9 @@ export function FarmerDashboardPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs text-gray-500 font-600">Latest Assessment for:</p>
+                    <p className="text-xs text-gray-500 font-600">{t('farmerDashboard.latestAssessmentFor', 'Latest Assessment for:')}</p>
                     <p className="text-sm font-800 text-gray-900 capitalize font-mono">
-                      {primaryCase.id} ({primaryCase.incidentReport.species})
+                      {primaryCase.id} ({tSpecies(primaryCase.incidentReport.species)})
                     </p>
                   </div>
                   <RiskScoreRing
@@ -568,7 +570,7 @@ export function FarmerDashboardPage() {
 
                 <div className="p-3 bg-purple-50/70 rounded-xl text-xs border border-purple-100">
                   <p className="font-700 text-purple-950">
-                    Recommended Action:
+                    {t('farmerDashboard.recommendedAction', 'Recommended Action:')}
                   </p>
                   <p className="text-purple-900 text-[11px] mt-0.5 leading-relaxed">
                     {primaryCase.triageResult.recommendation}
@@ -578,7 +580,7 @@ export function FarmerDashboardPage() {
             ) : (
               <div className="text-center py-3 space-y-2">
                 <p className="text-xs text-gray-600">
-                  When you report symptoms, our AI engine estimates transmission risk and alerts local veterinary officers for priority field visits.
+                  {t('farmerDashboard.aiExplanationGeneral', 'When you report symptoms, our AI engine estimates transmission risk and alerts local veterinary officers for priority field visits.')}
                 </p>
               </div>
             )}
@@ -587,7 +589,7 @@ export function FarmerDashboardPage() {
             <div className="p-2.5 bg-blue-50 rounded-lg border border-blue-200 text-[11px] text-blue-900 flex items-start gap-2">
               <HelpCircle size={15} className="text-blue-600 flex-shrink-0 mt-0.5" />
               <p className="leading-tight">
-                <strong>Safety Notice:</strong> AI risk assessment provides an early-warning indication based on reported symptoms and available evidence. It does not replace veterinary diagnosis.
+                <strong>{t('common.safetyNotice', 'Safety Notice')}:</strong> {t('common.safetyNoticeDetail', 'AI risk assessment provides an early-warning indication based on reported symptoms and available evidence. It does not replace veterinary diagnosis.')}
               </p>
             </div>
           </div>
@@ -603,7 +605,7 @@ export function FarmerDashboardPage() {
                 ) : (
                   <WifiOff size={15} className="text-amber-600" />
                 )}
-                Offline Sync Status
+                {t('farmerDashboard.offlineSyncStatus', 'Offline Sync Status')}
               </span>
               <span className="font-mono text-[11px] text-gray-400">IndexedDB</span>
             </h2>
@@ -611,10 +613,10 @@ export function FarmerDashboardPage() {
             {pendingSyncCount > 0 ? (
               <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-950 space-y-2">
                 <p className="font-700 text-amber-900">
-                  ⚠️ {pendingSyncCount} report{pendingSyncCount > 1 ? 's' : ''} waiting to sync
+                  ⚠️ {pendingSyncCount} {t('farmerDashboard.reportsWaitingToSync', 'reports waiting to sync')}
                 </p>
                 <p className="text-[11px] text-amber-800 leading-tight">
-                  Captured offline and stored safely on this device. They will synchronize automatically when internet is available.
+                  {t('farmerDashboard.offlineStoredDesc', 'Captured offline and stored safely on this device. They will synchronize automatically when internet is available.')}
                 </p>
                 {isOnline && (
                   <button
@@ -623,7 +625,7 @@ export function FarmerDashboardPage() {
                     className="btn btn-primary bg-amber-600 hover:bg-amber-700 btn-sm text-white w-full text-xs font-700 gap-1 mt-1"
                   >
                     <RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
-                    {isSyncing ? 'Synchronizing...' : 'Sync Now'}
+                    {isSyncing ? t('common.syncing', 'Syncing...') : t('common.syncNow', 'Sync Now')}
                   </button>
                 )}
               </div>
@@ -631,8 +633,8 @@ export function FarmerDashboardPage() {
               <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-950 flex items-center gap-2.5">
                 <CheckCircle2 size={18} className="text-emerald-600 flex-shrink-0" />
                 <div>
-                  <p className="font-700 text-emerald-900">All reports synced</p>
-                  <p className="text-[11px] text-emerald-700">Device storage is up to date with district network.</p>
+                  <p className="font-700 text-emerald-900">{t('farmerDashboard.allReportsSynced', 'All reports synced')}</p>
+                  <p className="text-[11px] text-emerald-700">{t('farmerDashboard.allReportsSyncedDesc', 'Device storage is up to date with district network.')}</p>
                 </div>
               </div>
             )}
@@ -648,22 +650,22 @@ export function FarmerDashboardPage() {
           <div>
             <h2 className="text-base font-800 text-gray-900 flex items-center gap-2">
               <Bell size={18} className="text-blue-600" />
-              Recent Alerts & Village Advisories
+              {t('farmerDashboard.recentAlertsTitle', 'Recent Alerts & Village Advisories')}
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Live disease warnings and vaccination notices for your district
+              {t('farmerDashboard.recentAlertsSubtitle', 'Live disease warnings and vaccination notices for your district')}
             </p>
           </div>
           <button
             onClick={() => navigate('/alerts')}
             className="text-xs font-700 text-blue-700 hover:text-blue-900 flex items-center gap-1"
           >
-            View All Alerts <ArrowRight size={13} />
+            {t('farmerDashboard.viewAllAlerts', 'View All Alerts')} <ArrowRight size={13} />
           </button>
         </div>
 
         {recentAlerts.length === 0 ? (
-          <p className="text-xs text-gray-400 py-4 text-center">No active alerts for your region.</p>
+          <p className="text-xs text-gray-400 py-4 text-center">{t('farmerDashboard.noActiveAlerts', 'No active alerts for your region.')}</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {recentAlerts.map(alert => (

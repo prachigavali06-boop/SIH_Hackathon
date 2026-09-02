@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useNotificationStore } from '../store/notificationStore';
 import { useAuthStore } from '../store/authStore';
+import { useLanguage } from '../i18n/useLanguage';
 import { AlertBanner } from '../components/ui/AlertBanner';
 import { retrieveAlerts } from '../services/api';
 import { createAlert } from '../services/platform';
@@ -22,6 +23,7 @@ const BROADCAST_TARGET_ROLES: UserRole[] = ['farmer', 'paravet', 'veterinarian',
 export function AlertsPage() {
   const navigate = useNavigate();
   const { currentUser } = useAuthStore();
+  const { t } = useLanguage();
   const {
     notifications,
     unreadCount,
@@ -141,7 +143,7 @@ export function AlertsPage() {
             Alerts &amp; Notification Center
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Role-Targeted Alerts · Emergency Outbreak Broadcasts ·{' '}
+            {t('alerts.subtitle', 'Targeted broadcast alerts for farmers, field workers and veterinarians')} ·{' '}
             {unreadCount > 0 ? (
               <span className="font-700 text-red-600">{unreadCount} Unread</span>
             ) : (
@@ -152,7 +154,7 @@ export function AlertsPage() {
         <div className="flex items-center gap-2">
           {unreadCount > 0 && (
             <button onClick={markAllRead} className="btn btn-sm btn-secondary">
-              <CheckCheck size={14} /> Mark All Read
+              <CheckCheck size={14} /> {t('alerts.markAllAsRead', 'Mark All Read')}
             </button>
           )}
           {(currentUser?.role === 'gov_officer' || currentUser?.role === 'admin') && (
@@ -160,7 +162,7 @@ export function AlertsPage() {
               onClick={() => setShowBroadcastModal(true)}
               className="btn btn-sm btn-danger"
             >
-              <Siren size={14} /> Send Broadcast
+              <Siren size={14} /> {t('alerts.sendBroadcast', 'Send Emergency Broadcast')}
             </button>
           )}
         </div>

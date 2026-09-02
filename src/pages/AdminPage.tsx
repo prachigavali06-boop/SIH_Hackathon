@@ -9,8 +9,10 @@ import { DEMO_USERS } from '../data/seed';
 import { StatCard } from '../components/ui/StatCard';
 import { Badge } from '../components/ui/Badge';
 import { IntegrationStatusCard } from '../components/dashboard/IntegrationStatusCard';
+import { useLanguage } from '../i18n/useLanguage';
 
 export function AdminPage() {
+  const { t, tRole } = useLanguage();
   const [seeding, setSeeding] = useState(false);
   const [seedMsg, setSeedMsg] = useState('');
 
@@ -32,7 +34,7 @@ export function AdminPage() {
             Surveillance System Administration & System Health
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Role-Based Access Control · System Diagnostics · Integration Adapter Status · Synthetic Seed Controls
+            {t('admin.subtitle', 'Role assignments, audit logs, API telemetry & model configurations')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -115,7 +117,7 @@ export function AdminPage() {
                   <td className="font-600 text-gray-900">{user.name}</td>
                   <td>
                     <span className="chip uppercase text-[10px] tracking-wider">
-                      {user.role.replace('_', ' ')}
+                      {tRole(user.role)}
                     </span>
                   </td>
                   <td className="text-gray-600">{user.district}</td>

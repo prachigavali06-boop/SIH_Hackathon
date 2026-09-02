@@ -9,6 +9,7 @@ import type { RiskBand, CaseRecord } from '../types';
 import { getCases } from '../services/api';
 import { getOfflineIncidents, type OfflineIncidentPayload } from '../services/offlineQueue';
 import { useAuthStore } from '../store/authStore';
+import { useLanguage } from '../i18n/useLanguage';
 
 const SPECIES_EMOJI: Record<string, string> = {
   cattle: '🐄', buffalo: '🐃', goat: '🐐',
@@ -18,6 +19,7 @@ const SPECIES_EMOJI: Record<string, string> = {
 export function CasesPage() {
   const navigate = useNavigate();
   const { currentUser } = useAuthStore();
+  const { t } = useLanguage();
 
   const [search, setSearch] = useState('');
   const [riskFilter, setRiskFilter] = useState<RiskBand | 'all'>('all');
@@ -136,7 +138,7 @@ export function CasesPage() {
       <div className="section-header">
         <div>
           <h1 className="section-title text-xl">
-            {viewScope === 'my' ? 'My Reported Incidents' : 'Surveillance Case Tracker'}
+            {viewScope === 'my' ? t('cases.myCasesTab', 'My Reported Cases') : t('cases.title', 'Surveillance Case Tracker')}
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {viewScope === 'my'
@@ -148,7 +150,7 @@ export function CasesPage() {
           className="btn btn-primary btn-sm shadow-xs"
           onClick={() => navigate('/report')}
         >
-          + Report Incident
+          + {t('sidebar.reportIncident', 'Report Incident')}
         </button>
       </div>
 
@@ -162,7 +164,7 @@ export function CasesPage() {
               : 'bg-white text-gray-600 border hover:bg-gray-50'
           }`}
         >
-          <Layers size={14} /> All Surveillance Cases ({combinedCases.length})
+          <Layers size={14} /> {t('cases.allCasesTab', 'All District Cases')} ({combinedCases.length})
         </button>
 
         <button
@@ -173,7 +175,7 @@ export function CasesPage() {
               : 'bg-white text-gray-600 border hover:bg-gray-50'
           }`}
         >
-          <User size={14} /> My Submissions ({
+          <User size={14} /> {t('cases.myCasesTab', 'My Reported Cases')} ({
             combinedCases.filter(c => c.incidentReport.reportedBy === 'u-farmer-01' || c.isOfflinePending).length
           })
         </button>
@@ -185,7 +187,7 @@ export function CasesPage() {
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="search"
-            placeholder="Search by ID, species, village…"
+            placeholder={t('cases.searchPlaceholder', 'Search by ID, species, village...')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="form-input pl-9"

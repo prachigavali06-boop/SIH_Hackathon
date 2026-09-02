@@ -7,7 +7,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useNotificationStore } from '../../store/notificationStore';
+import { useLanguage } from '../../i18n/useLanguage';
 import { RoleSwitcher } from './RoleSwitcher';
+import { LanguageSelector } from './LanguageSelector';
 
 interface TopbarProps {
   onMenuToggle: () => void;
@@ -17,6 +19,7 @@ interface TopbarProps {
 export function Topbar({ onMenuToggle, isOnline = true }: TopbarProps) {
   const { currentUser, logout } = useAuthStore();
   const { unreadCount } = useNotificationStore();
+  const { t, tRole } = useLanguage();
   const navigate = useNavigate();
   const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
 
@@ -38,22 +41,25 @@ export function Topbar({ onMenuToggle, isOnline = true }: TopbarProps) {
 
       {/* Page title area — desktop only */}
       <div className="hidden md:flex items-center gap-2 text-sm text-gray-500">
-        <span className="text-green-700 font-700">Livestock Sentinel</span>
+        <span className="text-green-700 font-700">{t('common.appName', 'Livestock Sentinel')}</span>
         <span className="text-gray-300">|</span>
-        <span>Animal Health Response System</span>
+        <span>{t('common.appSubtitle', 'Animal Health Response System')}</span>
       </div>
 
       {/* Spacer */}
       <div className="flex-1" />
 
+      {/* Global Multilingual Selector */}
+      <LanguageSelector variant="header" />
+
       {/* Connectivity indicator */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 ml-2">
         {isOnline
           ? <Wifi size={14} className="text-green-500" />
           : <WifiOff size={14} className="text-amber-500" />
         }
         <span className={`text-xs font-500 ${isOnline ? 'text-green-600' : 'text-amber-600'}`}>
-          {isOnline ? 'Online' : 'Offline'}
+          {isOnline ? t('common.online', 'Online') : t('common.offline', 'Offline')}
         </span>
       </div>
 
@@ -84,7 +90,7 @@ export function Topbar({ onMenuToggle, isOnline = true }: TopbarProps) {
             </div>
             <div className="hidden sm:block text-left">
               <p className="text-xs font-600 text-gray-800 leading-tight">{currentUser.name}</p>
-              <p className="text-xs text-gray-400 capitalize leading-tight">{currentUser.role.replace('_', ' ')}</p>
+              <p className="text-xs text-gray-400 capitalize leading-tight">{tRole(currentUser.role)}</p>
             </div>
           </button>
 
@@ -92,7 +98,7 @@ export function Topbar({ onMenuToggle, isOnline = true }: TopbarProps) {
           {showRoleSwitcher && (
             <div className="absolute right-0 top-full mt-1 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 p-3">
               <p className="text-xs font-700 text-gray-500 uppercase tracking-wider mb-2">
-                Demo: Switch Role
+                {t('common.switchRole', 'Demo: Switch Role')}
               </p>
               <RoleSwitcher compact />
               <hr className="my-2 border-gray-100" />
@@ -101,7 +107,7 @@ export function Topbar({ onMenuToggle, isOnline = true }: TopbarProps) {
                 className="flex items-center gap-2 w-full px-2 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
                 <LogOut size={14} />
-                Sign Out
+                {t('common.logout', 'Sign Out')}
               </button>
             </div>
           )}
