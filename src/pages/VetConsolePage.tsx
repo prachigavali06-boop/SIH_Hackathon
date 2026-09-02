@@ -232,7 +232,7 @@ export function VetConsolePage() {
       caseId: selectedCase.id,
       animalId,
       sampleType,
-      collectedByUserId: currentUser?.name || 'Sunita Patil (Field Worker)',
+      collectedByUserId: currentUser?.id || 'u-vet-01',
       collectedAt: new Date().toISOString(),
       animalCountSampled: 1,
       destinationLabName: destinationLab,
@@ -254,7 +254,7 @@ export function VetConsolePage() {
       species: selectedCase.incidentReport.species,
       vaccineName,
       batchNumber: batchNo,
-      administeredByUserId: currentUser?.name || 'Dr. Anand Deshmukh',
+      administeredByUserId: currentUser?.id || 'u-vet-01',
       administeredAt: new Date().toISOString().split('T')[0],
       nextDueDate,
     });
@@ -271,7 +271,7 @@ export function VetConsolePage() {
 
     await recordTreatment({
       caseId: selectedCase.id,
-      prescribedByVetId: currentUser?.name || 'Dr. Anand Deshmukh',
+      prescribedByVetId: currentUser?.id || 'u-vet-01',
       medicationName,
       dosage,
       instructions,

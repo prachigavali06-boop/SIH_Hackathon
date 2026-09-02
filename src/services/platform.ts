@@ -1,8 +1,8 @@
 // ============================================================
 // LIVESTOCK SENTINEL — Extended Service & API Contracts Layer
 // Member 1 — Platform Core & Integration Layer
-// Extension of api.ts: New contracts for CaseEvent, Evidence,
-// VaccinationCoverage, MovementRoute, AuditEvent services
+// Extension of api.ts: Contracts for CaseEvent, Evidence,
+// VaccinationCoverage, MovementRoute, AuditEvent services & Alerts
 // ============================================================
 
 import { supabase, isSupabaseConfigured } from './supabase';
@@ -114,12 +114,12 @@ export async function addCaseEvent(params: {
       await supabase.from('case_events').insert({
         id: event.id,
         case_id: event.caseId,
-        actor_user_id: event.actorUserId,
+        actor_user_id: event.actorUserId || null,
         actor_role: event.actorRole,
         event_type: event.eventType,
         timestamp: event.timestamp,
         summary: event.summary,
-        metadata: event.metadata,
+        metadata: event.metadata || {},
       });
     } catch (err) {
       console.warn('Supabase addCaseEvent fallback:', err);
@@ -171,7 +171,7 @@ export async function addEvidence(params: {
   metadata?: Record<string, any>;
 }): Promise<Evidence> {
   const ev: Evidence = {
-    id: `evd-${params.caseId}-${Date.now()}`,
+    id: `evd-${params.caseId}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     caseId: params.caseId,
     type: params.type,
     source: params.source,
@@ -191,9 +191,9 @@ export async function addEvidence(params: {
         case_id: ev.caseId,
         type: ev.type,
         source: ev.source,
-        uri: ev.uri,
-        transcript: ev.transcript,
-        metadata: ev.metadata,
+        uri: ev.uri || null,
+        transcript: ev.transcript || null,
+        metadata: ev.metadata || {},
         created_at: ev.createdAt,
       });
     } catch (err) {
@@ -254,6 +254,42 @@ export async function getVaccinationCoverage(params: {
   species?: AnimalSpecies;
   riskThreshold?: number;
 }): Promise<VaccinationCoverage[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      let query = supabase.from('vaccination_coverage').select('*');
+      if (params.district) query = query.eq('district', params.district);
+      if (params.block) query = query.eq('block', params.block);
+      if (params.village) query = query.eq('village', params.village);
+      if (params.species) query = query.eq('species', params.species);
+
+      const { data, error } = await query;
+      if (!error && data && data.length > 0) {
+        return data.map(r => {
+          const covPct = parseFloat(r.coverage_percentage) || 0;
+          const thresh = r.risk_threshold_percentage ? parseFloat(r.risk_threshold_percentage) : (params.riskThreshold ?? 75);
+          return {
+            id: r.id,
+            district: r.district,
+            block: r.block,
+            village: r.village,
+            species: r.species,
+            eligibleAnimalCount: r.eligible_animal_count || 0,
+            vaccinatedAnimalCount: r.vaccinated_animal_count || 0,
+            coveragePercentage: covPct,
+            riskThresholdPercentage: thresh,
+            isVulnerable: r.is_vulnerable ?? (covPct < thresh),
+            campaignDate: r.campaign_date,
+            vaccineType: r.vaccine_type || 'General Livestock Vaccine',
+            source: r.source || 'District Department of Animal Husbandry',
+            updatedAt: r.updated_at || new Date().toISOString(),
+          };
+        });
+      }
+    } catch (err) {
+      console.warn('Supabase getVaccinationCoverage fallback:', err);
+    }
+  }
+
   let result = [...VACCINATION_COVERAGE_STORE];
 
   if (params.district) result = result.filter(v => v.district === params.district);
@@ -261,7 +297,6 @@ export async function getVaccinationCoverage(params: {
   if (params.village) result = result.filter(v => v.village === params.village);
   if (params.species) result = result.filter(v => v.species === params.species);
 
-  // Apply configurable risk threshold if provided
   if (params.riskThreshold !== undefined) {
     result = result.map(v => ({
       ...v,
@@ -288,14 +323,14 @@ export async function upsertVaccinationCoverage(coverage: VaccinationCoverage): 
         id: updated.id,
         district: updated.district,
         block: updated.block,
-        village: updated.village,
+        village: updated.village || null,
         species: updated.species,
         eligible_animal_count: updated.eligibleAnimalCount,
         vaccinated_animal_count: updated.vaccinatedAnimalCount,
         coverage_percentage: updated.coveragePercentage,
-        risk_threshold_percentage: updated.riskThresholdPercentage,
-        is_vulnerable: updated.isVulnerable,
-        campaign_date: updated.campaignDate,
+        risk_threshold_percentage: updated.riskThresholdPercentage || 75,
+        is_vulnerable: updated.isVulnerable ?? (updated.coveragePercentage < (updated.riskThresholdPercentage || 75)),
+        campaign_date: updated.campaignDate || null,
         vaccine_type: updated.vaccineType,
         source: updated.source,
         updated_at: updated.updatedAt,
@@ -316,6 +351,39 @@ export async function getMovementRoutes(params?: {
   district?: string;
   riskLevel?: string;
 }): Promise<MovementRoute[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      const { data, error } = await supabase.from('movement_routes').select('*');
+      if (!error && data && data.length > 0) {
+        let routes: MovementRoute[] = data.map(r => ({
+          id: r.id,
+          marketNodeName: r.market_node_name,
+          sourceLocation: r.source_location,
+          destinationLocation: r.destination_location,
+          routeType: r.route_type,
+          estimatedMovementVolume: r.estimated_movement_volume || 0,
+          timePeriod: r.time_period || 'weekly',
+          confidence: r.confidence || 'medium',
+          source: r.source || 'District Movement Survey',
+          riskLevel: r.risk_level || 'moderate',
+          createdAt: r.created_at,
+        }));
+        if (params?.district) {
+          routes = routes.filter(
+            r => r.sourceLocation?.district === params.district ||
+                 r.destinationLocation?.district === params.district
+          );
+        }
+        if (params?.riskLevel) {
+          routes = routes.filter(r => r.riskLevel === params.riskLevel);
+        }
+        if (routes.length > 0) return routes;
+      }
+    } catch (err) {
+      console.warn('Supabase getMovementRoutes fallback:', err);
+    }
+  }
+
   let result = [...MOVEMENT_ROUTES_STORE];
   if (params?.district) {
     result = result.filter(
@@ -349,7 +417,7 @@ export async function addMovementRoute(route: Omit<MovementRoute, 'id' | 'create
         time_period: newRoute.timePeriod,
         confidence: newRoute.confidence,
         source: newRoute.source,
-        risk_level: newRoute.riskLevel,
+        risk_level: newRoute.riskLevel || 'moderate',
         created_at: newRoute.createdAt,
       });
     } catch (err) {
@@ -361,7 +429,7 @@ export async function addMovementRoute(route: Omit<MovementRoute, 'id' | 'create
 }
 
 // ----------------------------------------------------------------
-// SERVICE 5: Alert Management (Extended)
+// SERVICE 5: Alert Management (Persistent & Synchronized)
 // ----------------------------------------------------------------
 
 export async function createAlert(params: {
@@ -397,8 +465,28 @@ export async function createAlert(params: {
     timestamp: now,
   };
 
-  // Persist directly into the shared notification store (persisted in localStorage)
+  // 1. Persist directly into the shared notification store (persisted in localStorage)
   useNotificationStore.getState().addNotification(alert);
+
+  // 2. Persist to Supabase database table
+  if (isSupabaseConfigured()) {
+    try {
+      await supabase.from('alerts').insert({
+        id: alert.id,
+        case_id: alert.caseId || null,
+        severity: alert.severity,
+        title: alert.title,
+        message: alert.message,
+        target_roles: alert.targetRoles || [],
+        target_district: alert.targetDistrict || null,
+        is_read: false,
+        action_path: alert.actionPath || null,
+        created_at: alert.createdAt,
+      });
+    } catch (err) {
+      console.warn('Supabase createAlert fallback:', err);
+    }
+  }
 
   if (params.caseId) {
     await addCaseEvent({
@@ -448,7 +536,7 @@ export async function recordAuditEvent(params: {
         actor_user_id: event.actorUserId,
         actor_role: event.actorRole,
         timestamp: event.timestamp,
-        details: event.details,
+        details: event.details || null,
       });
     } catch (err) {
       console.warn('Supabase recordAuditEvent fallback:', err);

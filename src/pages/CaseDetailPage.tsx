@@ -182,36 +182,38 @@ export function CaseDetailPage() {
   return (
     <div className="space-y-5 page-enter max-w-5xl mx-auto pb-10">
       {/* Back + header */}
-      <div className="flex items-start gap-3">
-        <button
-          onClick={() => navigate('/cases')}
-          className="btn btn-secondary btn-sm mt-0.5"
-          aria-label="Back to cases"
-        >
-          <ArrowLeft size={14} /> Back
-        </button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-800 text-gray-900">{caseRecord.id}</h1>
-            <Badge variant={ir.status} />
-            {tr && <Badge variant={tr.riskBand} />}
-            {caseRecord.syncMetadata?.syncStatus === 'PENDING' ? (
-              <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-700 border border-amber-200">
-                <WifiOff size={11} /> Pending Sync (Offline)
-              </span>
-            ) : (
-              <span className="synthetic-watermark">Synthetic</span>
-            )}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          <button
+            onClick={() => navigate('/cases')}
+            className="btn btn-secondary btn-sm mt-0.5 flex-shrink-0"
+            aria-label="Back to cases"
+          >
+            <ArrowLeft size={14} /> Back
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl font-800 text-gray-900">{caseRecord.id}</h1>
+              <Badge variant={ir.status} />
+              {tr && <Badge variant={tr.riskBand} />}
+              {caseRecord.syncMetadata?.syncStatus === 'PENDING' ? (
+                <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-700 border border-amber-200">
+                  <WifiOff size={11} /> Pending Sync (Offline)
+                </span>
+              ) : (
+                <span className="synthetic-watermark">Synthetic</span>
+              )}
+            </div>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {SPECIES_EMOJI[ir.species]} {ir.species.toUpperCase()} Incident Report ·{' '}
+              {ir.location.village}, {ir.location.district} ·{' '}
+              Reported {format(new Date(ir.createdAt), 'dd MMM yyyy, HH:mm')}
+            </p>
           </div>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {SPECIES_EMOJI[ir.species]} {ir.species.toUpperCase()} Incident Report ·{' '}
-            {ir.location.village}, {ir.location.district} ·{' '}
-            Reported {format(new Date(ir.createdAt), 'dd MMM yyyy, HH:mm')}
-          </p>
         </div>
         <button
           onClick={() => navigate('/vet-console')}
-          className="btn btn-primary bg-purple-700 hover:bg-purple-800 btn-sm gap-1"
+          className="btn btn-primary bg-purple-700 hover:bg-purple-800 btn-sm gap-1 self-stretch sm:self-auto justify-center"
         >
           <Stethoscope size={14} /> Open in Vet Console
         </button>

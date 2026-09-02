@@ -53,12 +53,12 @@ export function Topbar({ onMenuToggle, isOnline = true }: TopbarProps) {
       <LanguageSelector variant="header" />
 
       {/* Connectivity indicator */}
-      <div className="flex items-center gap-1.5 ml-2">
+      <div className="flex items-center gap-1 sm:gap-1.5 ml-1 sm:ml-2 flex-shrink-0" title={isOnline ? t('common.online', 'Online') : t('common.offline', 'Offline')}>
         {isOnline
-          ? <Wifi size={14} className="text-green-500" />
-          : <WifiOff size={14} className="text-amber-500" />
+          ? <Wifi size={14} className="text-green-500 flex-shrink-0" />
+          : <WifiOff size={14} className="text-amber-500 flex-shrink-0" />
         }
-        <span className={`text-xs font-500 ${isOnline ? 'text-green-600' : 'text-amber-600'}`}>
+        <span className={`hidden sm:inline text-xs font-500 ${isOnline ? 'text-green-600' : 'text-amber-600'}`}>
           {isOnline ? t('common.online', 'Online') : t('common.offline', 'Offline')}
         </span>
       </div>
@@ -66,12 +66,12 @@ export function Topbar({ onMenuToggle, isOnline = true }: TopbarProps) {
       {/* Notifications */}
       <button
         onClick={() => navigate('/alerts')}
-        className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 transition-colors"
+        className="relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
       >
         <Bell size={18} className="text-gray-600" />
         {unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-700 rounded-full flex items-center justify-center">
+          <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-700 rounded-full flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -79,13 +79,13 @@ export function Topbar({ onMenuToggle, isOnline = true }: TopbarProps) {
 
       {/* User avatar / role switcher */}
       {currentUser && (
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <button
             onClick={() => setShowRoleSwitcher(s => !s)}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
             aria-label="User menu"
           >
-            <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
               <span className="text-green-700 text-xs font-700">{currentUser.avatarInitials}</span>
             </div>
             <div className="hidden sm:block text-left">
@@ -96,7 +96,7 @@ export function Topbar({ onMenuToggle, isOnline = true }: TopbarProps) {
 
           {/* Dropdown */}
           {showRoleSwitcher && (
-            <div className="absolute right-0 top-full mt-1 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 p-3">
+            <div className="absolute right-0 top-full mt-1 w-64 max-w-[calc(100vw-1.5rem)] bg-white rounded-xl shadow-xl border border-gray-100 z-50 p-3">
               <p className="text-xs font-700 text-gray-500 uppercase tracking-wider mb-2">
                 {t('common.switchRole', 'Demo: Switch Role')}
               </p>

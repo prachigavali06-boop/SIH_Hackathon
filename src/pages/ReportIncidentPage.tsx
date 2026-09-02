@@ -297,7 +297,7 @@ export function ReportIncidentPage() {
     try {
       if (isOnline) {
         // Online workflow: createCase -> attach all evidences
-        const { caseId, record } = await createCase({
+        const { caseId, record, isSyncedToDatabase } = await createCase({
           reportedByUserId: userId,
           reporterRole: role,
           primarySpecies: species,
@@ -336,7 +336,7 @@ export function ReportIncidentPage() {
         }
 
         setCreatedCaseId(caseId);
-        setWasOfflineSubmitted(false);
+        setWasOfflineSubmitted(!isSyncedToDatabase);
       } else {
         // Offline workflow: save locally in IndexedDB
         const offlineReport = await saveOfflineIncident({
@@ -585,7 +585,7 @@ export function ReportIncidentPage() {
             </div>
 
             {/* Animal Counts */}
-            <div className="grid grid-cols-3 gap-3 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 pt-1">
               <div>
                 <label className="form-label text-xs">
                   {isHi ? 'कुल झुंड (संख्या)' : 'Total Herd Size'}

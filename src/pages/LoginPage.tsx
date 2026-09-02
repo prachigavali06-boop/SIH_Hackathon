@@ -40,7 +40,7 @@ export function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-sentinel-950 via-sentinel-900 to-sentinel-800 flex flex-col items-center justify-center p-4 relative">
       {/* Top language selector */}
-      <div className="absolute top-4 right-4 z-20">
+      <div className="w-full max-w-md flex justify-end mb-2 sm:mb-0 sm:absolute sm:top-4 sm:right-4 z-20">
         <LanguageSelector variant="pills" />
       </div>
 
@@ -48,16 +48,16 @@ export function LoginPage() {
       <div className="w-full max-w-md">
 
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-green-400/20 border border-green-400/30 flex items-center justify-center mx-auto mb-4">
-            <Shield size={32} className="text-green-300" />
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-green-400/20 border border-green-400/30 flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <Shield size={30} className="text-green-300" />
           </div>
-          <h1 className="text-2xl font-800 text-white">{t('login.title', 'Livestock Sentinel')}</h1>
-          <p className="text-green-300/70 text-sm mt-1">{t('login.subtitle', 'Animal Health Response System')}</p>
+          <h1 className="text-xl sm:text-2xl font-800 text-white">{t('login.title', 'Livestock Sentinel')}</h1>
+          <p className="text-green-300/70 text-xs sm:text-sm mt-1">{t('login.subtitle', 'Animal Health Response System')}</p>
         </div>
 
         {/* Login form */}
-        <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-6">
+        <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl p-4 sm:p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-600 text-green-100 mb-1.5">
@@ -122,7 +122,7 @@ export function LoginPage() {
             <p className="text-xs font-600 text-white/40 uppercase tracking-wider mb-3 text-center">
               {t('login.quickDemoLogin', 'Quick Demo Login')}
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {DEMO_ACCOUNTS.map(acc => (
                 <button
                   key={acc.email}
