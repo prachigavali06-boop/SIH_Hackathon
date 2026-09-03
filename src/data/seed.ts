@@ -88,9 +88,9 @@ export const MAHARASHTRA_GOVERNMENT_LOCATIONS = {
       name: 'Nashik',
       talukas: [
         {
-          name: 'Dindori',
+          name: 'Niphad',
           localities: [
-            { name: 'Antapur', type: 'village' },
+            { name: 'Chandori', type: 'village' },
           ],
         },
       ],
@@ -269,7 +269,7 @@ export const SYNTHETIC_DASHBOARD_STATS: DashboardStats = {
   ],
   districtHotspots: [
     { district: 'Nashik',     count: 14, riskBand: 'high'     },
-    { district: 'Ahmednagar', count: 9,  riskBand: 'moderate' },
+    { district: 'Ahilyanagar', count: 9,  riskBand: 'moderate' },
     { district: 'Pune',       count: 6,  riskBand: 'moderate' },
     { district: 'Kolhapur',   count: 5,  riskBand: 'low'      },
   ],
