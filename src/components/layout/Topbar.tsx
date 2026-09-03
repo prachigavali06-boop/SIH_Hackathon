@@ -34,7 +34,7 @@ export function Topbar({ onMenuToggle, isOnline = true }: TopbarProps) {
       <button
         className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 transition-colors"
         onClick={onMenuToggle}
-        aria-label="Toggle navigation"
+        aria-label={t('common.toggleNavigation', 'Toggle navigation')}
       >
         <Menu size={20} className="text-gray-600" />
       </button>
@@ -67,7 +67,7 @@ export function Topbar({ onMenuToggle, isOnline = true }: TopbarProps) {
       <button
         onClick={() => navigate('/alerts')}
         className="relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
-        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+        aria-label={`${t('common.notifications', 'Notifications')}${unreadCount > 0 ? ` (${unreadCount} ${t('common.unread', 'unread')})` : ''}`}
       >
         <Bell size={18} className="text-gray-600" />
         {unreadCount > 0 && (
@@ -83,7 +83,7 @@ export function Topbar({ onMenuToggle, isOnline = true }: TopbarProps) {
           <button
             onClick={() => setShowRoleSwitcher(s => !s)}
             className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="User menu"
+            aria-label={t('common.userMenu', 'User menu')}
           >
             <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
               <span className="text-green-700 text-xs font-700">{currentUser.avatarInitials}</span>

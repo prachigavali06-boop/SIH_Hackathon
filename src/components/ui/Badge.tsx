@@ -4,6 +4,7 @@
 
 import { clsx } from 'clsx';
 import type { RiskBand, CaseStatus, LabResultStatus } from '../../types';
+import { useLanguage } from '../../i18n/useLanguage';
 
 export type BadgeVariant =
   | RiskBand
@@ -83,8 +84,14 @@ const LABEL_MAP: Record<string, string> = {
 };
 
 export function Badge({ variant, label, size = 'md', className }: BadgeProps) {
+  const { tRiskBand, tCaseStatus, t } = useLanguage();
   const cls = VARIANT_MAP[variant] ?? 'badge-pending';
-  const text = label ?? LABEL_MAP[variant] ?? variant;
+  const translatedText = variant in VARIANT_MAP
+    ? (['low', 'moderate', 'high', 'critical'].includes(variant)
+      ? tRiskBand(variant)
+      : tCaseStatus(variant))
+    : t(`common.${variant}`, LABEL_MAP[variant] ?? variant);
+  const text = label ?? translatedText;
 
   return (
     <span
