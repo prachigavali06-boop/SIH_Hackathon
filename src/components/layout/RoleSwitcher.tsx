@@ -1,23 +1,7 @@
-// ============================================================
-// RoleSwitcher — demo convenience component
-// Visible to all in demo mode for hackathon presentation
-// ============================================================
-
 import { useAuthStore } from '../../store/authStore';
+import { useLanguage } from '../../i18n/useLanguage';
 import { DEMO_USERS } from '../../data/seed';
-import type { UserRole } from '../../types';
 
-const ROLE_LABELS: Record<UserRole, string> = {
-  farmer:             '🌾 Farmer',
-  field_worker:       '🌾 Field Worker',
-  paravet:            '💉 Para-vet',
-  veterinarian:       '🩺 Veterinarian',
-  laboratory:         '🔬 Laboratory',
-  lab_tech:           '🔬 Lab Tech',
-  government_officer: '🏛 Gov. Officer',
-  gov_officer:        '🏛 Gov. Officer',
-  admin:              '⚙️ Admin',
-};
 
 interface RoleSwitcherProps {
   compact?: boolean;
@@ -25,12 +9,13 @@ interface RoleSwitcherProps {
 
 export function RoleSwitcher({ compact }: RoleSwitcherProps) {
   const { currentUser, switchRole } = useAuthStore();
+  const { t, tRole } = useLanguage();
 
   return (
     <div className={compact ? '' : 'p-3 border-t border-white/10'}>
       {!compact && (
         <p className="text-xs text-green-200/60 uppercase font-600 tracking-wider mb-2 px-1">
-          Demo — Switch Role
+          {t('common.switchRole', 'Demo — Switch Role')}
         </p>
       )}
       <div className={compact ? 'flex flex-wrap gap-1' : 'space-y-0.5'}>
@@ -51,7 +36,7 @@ export function RoleSwitcher({ compact }: RoleSwitcherProps) {
             }
             title={`Switch to ${user.name} (${user.role})`}
           >
-            {ROLE_LABELS[user.role]}
+            {tRole(user.role)}
           </button>
         ))}
       </div>

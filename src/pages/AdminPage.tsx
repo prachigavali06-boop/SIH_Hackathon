@@ -1,17 +1,34 @@
 // ============================================================
-// AdminPage — Module 10: Admin Panel & System Health
-// User management, synthetic data reset & audit logging
+// AdminPage — Member 5: System Administration & Surveillance Health
+// User management, synthetic data reset, audit logging & Integration boundaries
 // ============================================================
 
 import { useEffect, useMemo, useState } from 'react';
-import { Settings, Shield, RefreshCw, Server, Users, Database, Activity } from 'lucide-react';
-import { DEMO_USERS, MAHARASHTRA_GOVERNMENT_LOCATIONS } from '../data/seed';
+
+import {
+  Settings,
+  Shield,
+  RefreshCw,
+  Server,
+  Users,
+  Database,
+  Activity,
+  Network,
+} from 'lucide-react';
+
+import {
+  DEMO_USERS,
+  MAHARASHTRA_GOVERNMENT_LOCATIONS,
+} from '../data/seed';
 import { StatCard } from '../components/ui/StatCard';
 import { Badge } from '../components/ui/Badge';
+import { IntegrationStatusCard } from '../components/dashboard/IntegrationStatusCard';
+import { useLanguage } from '../i18n/useLanguage';
 
 const DISTRICT_OPTIONS = MAHARASHTRA_GOVERNMENT_LOCATIONS.districts.map(d => d.name);
 
 export function AdminPage() {
+  const { t, tRole } = useLanguage();
   const [seeding, setSeeding] = useState(false);
   const [seedMsg, setSeedMsg] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState(DISTRICT_OPTIONS[0]);
@@ -43,31 +60,31 @@ export function AdminPage() {
     setSeeding(true);
     setTimeout(() => {
       setSeeding(false);
-      setSeedMsg('Synthetic database successfully re-seeded to default state.');
+      setSeedMsg('Synthetic database & GIS surveillance cluster seeds successfully reset to default state.');
     }, 600);
   };
 
   return (
-    <div className="space-y-6 page-enter">
+    <div className="space-y-6 page-enter pb-10">
       {/* Header */}
       <div className="section-header">
         <div>
-          <h1 className="section-title text-xl">
+          <h1 className="section-title text-xl flex items-center gap-2">
             <Settings size={22} className="text-gray-800" />
-            System Administration & Health
+            Surveillance System Administration & System Health
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Role-Based Access Control · System Diagnostics · Synthetic Seed Controls
+            {t('admin.subtitle', 'Role assignments, audit logs, API telemetry & model configurations')}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleResetData}
             disabled={seeding}
-            className="btn btn-sm btn-secondary"
+            className="btn btn-sm btn-secondary flex items-center gap-1.5"
           >
             <RefreshCw size={14} className={seeding ? 'animate-spin' : ''} />
-            {seeding ? 'Resetting…' : 'Reset Synthetic Seed'}
+            {seeding ? 'Resetting…' : 'Reset Synthetic Seed Data'}
           </button>
         </div>
       </div>
@@ -97,10 +114,10 @@ export function AdminPage() {
           accentColor="#7c3aed"
         />
         <StatCard
-          label="System Roles"
-          value="6 Roles"
-          icon={Users}
-          change="RBAC Enforced"
+          label="Integration Boundaries"
+          value="4 Adapters"
+          icon={Network}
+          change="NADRES/INAPH/State/LIMS"
           changeDirection="neutral"
           accentColor="#0284c7"
         />
@@ -113,6 +130,9 @@ export function AdminPage() {
           accentColor="#d97706"
         />
       </div>
+
+      {/* Integration Boundaries & Stubs Card */}
+      <IntegrationStatusCard />
 
       {/* Government location registry */}
       <div className="card p-5 space-y-4">
@@ -167,7 +187,7 @@ export function AdminPage() {
       </div>
 
       {/* Users Management */}
-      <div className="card p-5 space-y-4">
+      <div className="card p-5 space-y-4 bg-white border border-gray-200">
         <h2 className="text-sm font-700 text-gray-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
           <Users size={16} /> User Registry & Role Assignments
         </h2>
@@ -189,7 +209,7 @@ export function AdminPage() {
                   <td className="font-600 text-gray-900">{user.name}</td>
                   <td>
                     <span className="chip uppercase text-[10px] tracking-wider">
-                      {user.role.replace('_', ' ')}
+                      {tRole(user.role)}
                     </span>
                   </td>
                   <td className="text-gray-600">{user.district}</td>
@@ -205,23 +225,23 @@ export function AdminPage() {
       </div>
 
       {/* System Audit Log */}
-      <div className="card p-5 space-y-3">
+      <div className="card p-5 space-y-3 bg-white border border-gray-200">
         <h2 className="text-sm font-700 text-gray-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
           <Shield size={16} /> Audit & Governance Log
         </h2>
 
         <div className="space-y-2 text-xs font-mono text-gray-600">
           <div className="p-2 bg-gray-50 rounded border flex justify-between">
-            <span>[2026-08-24 11:00:00] CONTAINMENT_ORDER_ISSUED by Dr. S.K. Mishra (Gov Officer)</span>
+            <span>[2026-08-27 18:30:00] SURVEILLANCE_FILTER_QUERY executed by Dr. S.K. Mishra (Gov Officer)</span>
+            <span className="text-green-700 font-600">SUCCESS</span>
+          </div>
+          <div className="p-2 bg-gray-50 rounded border flex justify-between">
+            <span>[2026-08-24 11:00:00] CONTAINMENT_ORDER_ISSUED by Dr. S.K. Mishra (Gov Officer) - Chandori Zone</span>
             <span className="text-green-700 font-600">SUCCESS</span>
           </div>
           <div className="p-2 bg-gray-50 rounded border flex justify-between">
             <span>[2026-08-24 10:00:00] LAB_RESULT_ENTRY by Priya Sharma (Lab Tech) - RT-PCR FMD Pos</span>
             <span className="text-green-700 font-600">VERIFIED</span>
-          </div>
-          <div className="p-2 bg-gray-50 rounded border flex justify-between">
-            <span>[2026-08-22 14:30:00] VET_ASSESSMENT by Dr. Anand Deshmukh (Vet) - Clinical FMD</span>
-            <span className="text-green-700 font-600">COMPLETED</span>
           </div>
         </div>
       </div>

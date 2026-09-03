@@ -297,12 +297,105 @@ CREATE TABLE IF NOT EXISTS response_actions (
 );
 
 -- ------------------------------------------------------------
+-- 17. CASE EVENTS (Event-Driven Case Timeline)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS case_events (
+  id VARCHAR(64) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  case_id VARCHAR(64) NOT NULL REFERENCES health_cases(id) ON DELETE CASCADE,
+  actor_user_id VARCHAR(64) REFERENCES users(id) ON DELETE SET NULL,
+  actor_role VARCHAR(32) NOT NULL,
+  event_type VARCHAR(64) NOT NULL CHECK (event_type IN (
+    'CASE_CREATED', 'SYMPTOMS_REPORTED', 'VOICE_ADDED', 'IMAGE_ADDED',
+    'RISK_ASSESSED', 'CLUSTER_DETECTED', 'VET_ASSIGNED', 'FIELD_VISIT_COMPLETED',
+    'SAMPLE_COLLECTED', 'SAMPLE_DISPATCHED', 'LAB_RECEIVED', 'LAB_RESULT_UPDATED',
+    'ALERT_SENT', 'RESPONSE_STARTED', 'CASE_CONTAINED', 'CASE_CLOSED'
+  )),
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  summary TEXT NOT NULL,
+  metadata JSONB DEFAULT '{}'::jsonb
+);
+
+-- ------------------------------------------------------------
+-- 18. EVIDENCE (Multimodal Field Evidence)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS evidence (
+  id VARCHAR(64) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  case_id VARCHAR(64) NOT NULL REFERENCES health_cases(id) ON DELETE CASCADE,
+  type VARCHAR(32) NOT NULL CHECK (type IN (
+    'TEXT', 'VOICE', 'IMAGE', 'FIELD_OBSERVATION',
+    'VACCINATION', 'ENVIRONMENTAL', 'MOVEMENT'
+  )),
+  source VARCHAR(255) NOT NULL,
+  uri TEXT,
+  transcript TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ------------------------------------------------------------
+-- 19. VACCINATION COVERAGE (Village/Block/District Level)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS vaccination_coverage (
+  id VARCHAR(64) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  district VARCHAR(128) NOT NULL,
+  block VARCHAR(128) NOT NULL,
+  village VARCHAR(128),
+  species VARCHAR(32) NOT NULL,
+  eligible_animal_count INT NOT NULL DEFAULT 0,
+  vaccinated_animal_count INT NOT NULL DEFAULT 0,
+  coverage_percentage NUMERIC(5,2) NOT NULL DEFAULT 0,
+  risk_threshold_percentage NUMERIC(5,2) DEFAULT 75,  -- Configurable, not fixed
+  is_vulnerable BOOLEAN DEFAULT FALSE,
+  campaign_date DATE,
+  vaccine_type VARCHAR(255) NOT NULL,
+  source VARCHAR(255) NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ------------------------------------------------------------
+-- 20. MOVEMENT ROUTES (Livestock Trade/Movement Network)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS movement_routes (
+  id VARCHAR(64) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  market_node_name VARCHAR(255) NOT NULL,
+  source_location JSONB NOT NULL,
+  destination_location JSONB NOT NULL,
+  route_type VARCHAR(32) NOT NULL CHECK (route_type IN (
+    'interstate', 'interdistrict', 'local_market', 'transhumance'
+  )),
+  estimated_movement_volume INT NOT NULL DEFAULT 0,
+  time_period VARCHAR(32) NOT NULL,
+  confidence VARCHAR(16) NOT NULL CHECK (confidence IN ('high', 'medium', 'low')),
+  source VARCHAR(255) NOT NULL,
+  risk_level VARCHAR(16) CHECK (risk_level IN ('low', 'moderate', 'high', 'critical')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ------------------------------------------------------------
+-- 21. AUDIT EVENTS (Audit Trail)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS audit_events (
+  id VARCHAR(64) PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  entity_type VARCHAR(32) NOT NULL CHECK (entity_type IN (
+    'case', 'sample', 'alert', 'user', 'evidence', 'containment'
+  )),
+  entity_id VARCHAR(64) NOT NULL,
+  action VARCHAR(128) NOT NULL,
+  actor_user_id VARCHAR(64) NOT NULL,
+  actor_role VARCHAR(32) NOT NULL,
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  details TEXT
+);
+
+-- ------------------------------------------------------------
 -- INDEXES FOR PERFORMANCE & SPATIAL SEARCH
 -- ------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_health_cases_district ON health_cases(district);
 CREATE INDEX IF NOT EXISTS idx_health_cases_status ON health_cases(status);
 CREATE INDEX IF NOT EXISTS idx_health_cases_risk_band ON health_cases(risk_band);
 CREATE INDEX IF NOT EXISTS idx_health_cases_lat_lng ON health_cases(latitude, longitude);
+CREATE INDEX IF NOT EXISTS idx_health_cases_village ON health_cases(village);
+CREATE INDEX IF NOT EXISTS idx_health_cases_block ON health_cases(block);
 
 CREATE INDEX IF NOT EXISTS idx_samples_barcode ON samples(barcode);
 CREATE INDEX IF NOT EXISTS idx_samples_case_id ON samples(case_id);
@@ -311,20 +404,108 @@ CREATE INDEX IF NOT EXISTS idx_lab_results_case_id ON lab_results(case_id);
 CREATE INDEX IF NOT EXISTS idx_alerts_target_district ON alerts(target_district);
 CREATE INDEX IF NOT EXISTS idx_alerts_created_at ON alerts(created_at DESC);
 
+CREATE INDEX IF NOT EXISTS idx_case_events_case_id ON case_events(case_id);
+CREATE INDEX IF NOT EXISTS idx_case_events_timestamp ON case_events(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_evidence_case_id ON evidence(case_id);
+CREATE INDEX IF NOT EXISTS idx_vacc_coverage_district ON vaccination_coverage(district, block);
+CREATE INDEX IF NOT EXISTS idx_vacc_coverage_vulnerable ON vaccination_coverage(is_vulnerable);
+CREATE INDEX IF NOT EXISTS idx_audit_events_entity ON audit_events(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_audit_events_timestamp ON audit_events(timestamp DESC);
+
+-- ------------------------------------------------------------
 -- ------------------------------------------------------------
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ------------------------------------------------------------
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE farms_or_herds ENABLE ROW LEVEL SECURITY;
+ALTER TABLE animals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE health_cases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE symptom_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE vaccination_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE treatment_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE risk_assessments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE outbreak_clusters ENABLE ROW LEVEL SECURITY;
+ALTER TABLE vet_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE field_visits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE samples ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lab_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE alerts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE advisories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE response_actions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE case_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE evidence ENABLE ROW LEVEL SECURITY;
+ALTER TABLE vaccination_coverage ENABLE ROW LEVEL SECURITY;
+ALTER TABLE movement_routes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_events ENABLE ROW LEVEL SECURITY;
 
--- Allow read access to authenticated users or public demo
+-- Allow read, insert, update access to authenticated users & public demo clients
+CREATE POLICY "Public & Auth Read Users" ON users FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Users" ON users FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public & Auth Update Users" ON users FOR UPDATE USING (true);
+
 CREATE POLICY "Public & Auth Read Access" ON health_cases FOR SELECT USING (true);
 CREATE POLICY "Public & Auth Insert Access" ON health_cases FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public & Auth Update Access" ON health_cases FOR UPDATE USING (true);
+
+CREATE POLICY "Public & Auth Read Symptoms" ON symptom_reports FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Symptoms" ON symptom_reports FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public & Auth Update Symptoms" ON symptom_reports FOR UPDATE USING (true);
+
 CREATE POLICY "Public & Auth Read Risk" ON risk_assessments FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Risk" ON risk_assessments FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public & Auth Update Risk" ON risk_assessments FOR UPDATE USING (true);
+
+CREATE POLICY "Public & Auth Read Field Visits" ON field_visits FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Field Visits" ON field_visits FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public & Auth Update Field Visits" ON field_visits FOR UPDATE USING (true);
+
 CREATE POLICY "Public & Auth Read Samples" ON samples FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Samples" ON samples FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public & Auth Update Samples" ON samples FOR UPDATE USING (true);
+
+CREATE POLICY "Public & Auth Read Lab Results" ON lab_results FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Lab Results" ON lab_results FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public & Auth Update Lab Results" ON lab_results FOR UPDATE USING (true);
+
 CREATE POLICY "Public & Auth Read Alerts" ON alerts FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Alerts" ON alerts FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public & Auth Update Alerts" ON alerts FOR UPDATE USING (true);
+
+CREATE POLICY "Public & Auth Read Events" ON case_events FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Events" ON case_events FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Public & Auth Read Evidence" ON evidence FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Evidence" ON evidence FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Public & Auth Read Vaccination Records" ON vaccination_records FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Vaccination Records" ON vaccination_records FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Public & Auth Read Treatment Records" ON treatment_records FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Treatment Records" ON treatment_records FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Public & Auth Read Vet Assignments" ON vet_assignments FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Vet Assignments" ON vet_assignments FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public & Auth Update Vet Assignments" ON vet_assignments FOR UPDATE USING (true);
+
+CREATE POLICY "Public & Auth Read Vaccination Coverage" ON vaccination_coverage FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Vaccination Coverage" ON vaccination_coverage FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public & Auth Update Vaccination Coverage" ON vaccination_coverage FOR UPDATE USING (true);
+
+CREATE POLICY "Public & Auth Read Movement Routes" ON movement_routes FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Movement Routes" ON movement_routes FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Public & Auth Read Audit" ON audit_events FOR SELECT USING (true);
+CREATE POLICY "Public & Auth Insert Audit" ON audit_events FOR INSERT WITH CHECK (true);
+
+-- ------------------------------------------------------------
+-- INITIAL CORE DEMO USERS SEED
+-- ------------------------------------------------------------
+INSERT INTO users (id, name, role, district, block, village, phone, avatar_initials)
+VALUES
+  ('u-farmer-01', 'Ramesh Kumar', 'farmer', 'Nashik', 'Niphad', 'Chandori', '+91 9876543210', 'RK'),
+  ('u-paravet-01', 'Sunita Patil', 'paravet', 'Nashik', 'Niphad', 'Chandori', '+91 9123456780', 'SP'),
+  ('u-vet-01', 'Dr. Anand Deshmukh', 'veterinarian', 'Nashik', 'Niphad', 'Niphad Town', '+91 9001234567', 'AD'),
+  ('u-lab-01', 'Priya Sharma', 'lab_tech', 'Nashik', 'Nashik', 'Nashik HQ', '+91 9812345670', 'PS'),
+  ('u-gov-01', 'Dr. S.K. Mishra', 'gov_officer', 'Nashik', 'Nashik', 'District Collectorate', '+91 9900112233', 'SM'),
+  ('u-admin-01', 'System Administrator', 'admin', 'Nashik', 'Nashik', 'Command Center', '+91 9800112233', 'SA')
+ON CONFLICT (id) DO NOTHING;

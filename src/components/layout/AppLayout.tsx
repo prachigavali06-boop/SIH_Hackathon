@@ -1,11 +1,8 @@
-// ============================================================
-// AppLayout — root layout wrapper with sidebar + topbar
-// ============================================================
-
 import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { OfflineBanner } from '../ui/OfflineBanner';
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -23,13 +20,15 @@ export function AppLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-sentinel-50">
+    <div className="min-h-screen bg-sentinel-50 flex flex-col">
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
-      <div className="main-layout">
+      <div className="main-layout flex flex-col flex-1">
+        <OfflineBanner />
+
         <Topbar
           onMenuToggle={() => setSidebarOpen(s => !s)}
           isOnline={isOnline}
