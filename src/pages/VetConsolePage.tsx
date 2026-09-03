@@ -16,7 +16,7 @@ import {
   recordTreatment, escalateCasePriority, closeCase, syncOfflineQueueToApi
 } from '../services/api';
 import { getUnsyncedOfflineItems } from '../services/offlineQueue';
-import { SYNTHETIC_CASES, DISEASE_INFO, SYMPTOM_CATALOG } from '../data/seed';
+import { SYNTHETIC_CASES, DISEASE_INFO, SYMPTOM_CATALOG, MAHARASHTRA_GOVERNMENT_LOCATIONS } from '../data/seed';
 import type { CaseRecord, SuspectedDisease, RiskBand } from '../types';
 import { Badge } from '../components/ui/Badge';
 import { AIExplanationPanel } from '../components/ui/AIExplanationPanel';
@@ -61,7 +61,18 @@ export function VetConsolePage() {
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
   const [priorityFilter, setPriorityFilter] = useState<RiskBand | 'all'>('all');
+  const [selectedDistrict, setSelectedDistrict] = useState('all');
+  const [selectedBlock, setSelectedBlock] = useState('all');
+  const [selectedVillage, setSelectedVillage] = useState('all');
   const [testScenario, setTestScenario] = useState<'all' | 'empty' | 'single' | 'critical' | 'sample_pending' | 'lab_result' | 'closed'>('all');
+
+  const districtOptions = MAHARASHTRA_GOVERNMENT_LOCATIONS.districts;
+  const blockOptions = selectedDistrict === 'all'
+    ? districtOptions.flatMap(district => district.talukas.map(taluka => ({ ...taluka, district: district.name })))
+    : districtOptions.find(district => district.name === selectedDistrict)?.talukas.map(taluka => ({ ...taluka, district: selectedDistrict })) ?? [];
+  const villageOptions = selectedBlock === 'all'
+    ? blockOptions.flatMap(block => block.localities.map(locality => ({ ...locality, block: block.name, district: block.district })))
+    : blockOptions.find(block => block.name === selectedBlock)?.localities.map(locality => ({ ...locality, block: selectedBlock, district: selectedDistrict })) ?? [];
 
   // Offline Queue State
   const [unsyncedCount, setUnsyncedCount] = useState<number>(0);
@@ -331,8 +342,12 @@ export function VetConsolePage() {
       c.incidentReport.species.toLowerCase().includes(q) ||
       (c.incidentReport.location.village?.toLowerCase().includes(q) ?? false) ||
       c.incidentReport.location.district.toLowerCase().includes(q);
+    const location = c.incidentReport.location;
+    const matchDistrict = selectedDistrict === 'all' || location.district === selectedDistrict;
+    const matchBlock = selectedBlock === 'all' || location.block === selectedBlock;
+    const matchVillage = selectedVillage === 'all' || location.village === selectedVillage;
     const matchPriority = priorityFilter === 'all' || c.triageResult?.riskBand === priorityFilter;
-    return matchSearch && matchPriority;
+    return matchSearch && matchDistrict && matchBlock && matchVillage && matchPriority;
   });
 
   return (
@@ -342,7 +357,7 @@ export function VetConsolePage() {
         <div>
           <h1 className="section-title text-xl flex items-center gap-2">
             <Stethoscope size={24} className="text-purple-700" />
-            Veterinary & Field Worker Console
+            {t('vetConsole.consoleTitle', 'Veterinary & Field Worker Console')}
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {t('vetConsole.subtitle', 'Clinical Examination, Sample Dispatch, Treatment & Containment')}
@@ -374,7 +389,7 @@ export function VetConsolePage() {
             </button>
           )}
 
-          <span className="badge badge-suspected">Member 3 Workspace</span>
+          <span className="badge badge-suspected">{t('vetConsole.workspace', 'Clinical Workspace')}</span>
         </div>
       </div>
 
@@ -383,9 +398,9 @@ export function VetConsolePage() {
         <div className="alert-banner warning p-4 bg-amber-50 border-l-4 border-amber-500 text-amber-900 flex items-start gap-3 rounded-lg">
           <Lock size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
           <div className="text-xs">
-            <strong className="text-sm font-700">Privileged Clinical Access Restricted</strong>
+              <strong className="text-sm font-700">{t('vetConsole.accessRestricted', 'Privileged Clinical Access Restricted')}</strong>
             <p className="mt-1">
-              You are currently logged in as a <strong>Farmer</strong>. Farmers can view basic report status, but cannot record clinical observations, submit sample collections, log treatments, or change operational priority. Switch to a <strong>Veterinarian</strong> or <strong>Field Worker</strong> account in the top bar to test active workflows.
+              {t('vetConsole.accessRestrictedDetail', 'You are currently logged in as a Farmer. Farmers can view basic report status, but cannot record clinical observations, submit sample collections, log treatments, or change operational priority. Switch to a Veterinarian or Field Worker account in the top bar to test active workflows.')}
             </p>
           </div>
         </div>
@@ -394,33 +409,33 @@ export function VetConsolePage() {
           <div className="flex items-center gap-2">
             <ShieldCheck size={18} className="text-purple-700 flex-shrink-0" />
             <span>
-              <strong>Domain Safety Compliance:</strong> AI outputs provide diagnostic assistance only. Definitive field diagnosis and sample ordering are executed solely by authorized clinical personnel.
+              <strong>{t('vetConsole.safetyCompliance', 'Domain Safety Compliance')}:</strong> {t('vetConsole.safetyComplianceDetail', 'AI outputs provide diagnostic assistance only. Definitive field diagnosis and sample ordering are executed solely by authorized clinical personnel.')}
             </span>
           </div>
-          <span className="synthetic-watermark">Synthetic Data</span>
+          <span className="synthetic-watermark">{t('common.syntheticData', 'Synthetic Data')}</span>
         </div>
       )}
 
       {/* Quick Metrics Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="card p-3 border-l-4 border-purple-600">
-          <p className="text-xs font-600 text-gray-500 uppercase">Assigned Cases</p>
+          <p className="text-xs font-600 text-gray-500 uppercase">{t('vetConsole.assignedCasesMetric', 'Assigned Cases')}</p>
           <p className="text-xl font-800 text-gray-900 mt-0.5">{cases.length}</p>
         </div>
         <div className="card p-3 border-l-4 border-amber-500">
-          <p className="text-xs font-600 text-gray-500 uppercase">Field Visits Needed</p>
+          <p className="text-xs font-600 text-gray-500 uppercase">{t('vetConsole.fieldVisitsNeededMetric', 'Field Visits Needed')}</p>
           <p className="text-xl font-800 text-amber-700 mt-0.5">
             {cases.filter(c => c.incidentReport.status === 'triaged' || c.incidentReport.status === 'vet_assigned').length}
           </p>
         </div>
         <div className="card p-3 border-l-4 border-blue-500">
-          <p className="text-xs font-600 text-gray-500 uppercase">Samples Dispatched</p>
+          <p className="text-xs font-600 text-gray-500 uppercase">{t('vetConsole.samplesDispatchedMetric', 'Samples Dispatched')}</p>
           <p className="text-xl font-800 text-blue-700 mt-0.5">
             {cases.filter(c => c.sampleCollection).length}
           </p>
         </div>
         <div className="card p-3 border-l-4 border-red-600">
-          <p className="text-xs font-600 text-gray-500 uppercase">Critical Escalations</p>
+          <p className="text-xs font-600 text-gray-500 uppercase">{t('vetConsole.criticalEscalationsMetric', 'Critical Escalations')}</p>
           <p className="text-xl font-800 text-red-600 mt-0.5">
             {cases.filter(c => c.triageResult?.riskBand === 'critical' || c.triageResult?.riskBand === 'high').length}
           </p>
@@ -431,17 +446,17 @@ export function VetConsolePage() {
       <div className="card p-3 bg-slate-900 text-white flex items-center justify-between flex-wrap gap-2">
         <span className="text-xs font-700 text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
           <FlaskConical size={14} className="text-purple-400" />
-          Test Scenario Presets:
+          {t('vetConsole.testScenarioPresets', 'Test Scenario Presets')}:
         </span>
         <div className="flex gap-1.5 flex-wrap text-xs">
           {[
-            { id: 'all', label: 'All Active' },
-            { id: 'empty', label: 'No Cases' },
-            { id: 'single', label: 'One Active Case' },
-            { id: 'critical', label: 'Critical Outbreak Case' },
-            { id: 'sample_pending', label: 'Pending Sample' },
-            { id: 'lab_result', label: 'Lab Result Received' },
-            { id: 'closed', label: 'Case Closed' },
+            { id: 'all', label: t('vetConsole.allActive', 'All Active') },
+            { id: 'empty', label: t('vetConsole.noCases', 'No Cases') },
+            { id: 'single', label: t('vetConsole.oneActiveCase', 'One Active Case') },
+            { id: 'critical', label: t('vetConsole.criticalOutbreakCase', 'Critical Outbreak Case') },
+            { id: 'sample_pending', label: t('vetConsole.pendingSample', 'Pending Sample') },
+            { id: 'lab_result', label: t('vetConsole.labResultReceived', 'Lab Result Received') },
+            { id: 'closed', label: t('vetConsole.caseClosed', 'Case Closed') },
           ].map(sc => (
             <button
               key={sc.id}
@@ -465,7 +480,7 @@ export function VetConsolePage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-700 text-gray-500 uppercase tracking-wider">
-              Assigned Field Queue ({displayCases.length})
+              {t('vetConsole.assignedFieldQueue', 'Assigned Field Queue')} ({displayCases.length})
             </h2>
             <div className="flex items-center gap-1">
               {(['all', 'high', 'critical'] as const).map(b => (
@@ -476,7 +491,7 @@ export function VetConsolePage() {
                     priorityFilter === b ? 'bg-purple-700 text-white' : 'bg-gray-100 text-gray-600'
                   }`}
                 >
-                  {b}
+                  {b === 'all' ? t('common.all', 'All') : t(`common.${b}`, b)}
                 </button>
               ))}
             </div>
@@ -485,19 +500,59 @@ export function VetConsolePage() {
           {/* Search box */}
           <input
             type="search"
-            placeholder="Search cases by ID, species, village..."
+            placeholder={t('vetConsole.searchCasesPlaceholder', 'Search cases by ID, species, village...')}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="form-input text-xs"
           />
+
+          <div className="card p-3 space-y-2 bg-white border border-gray-200">
+            <p className="text-[11px] font-700 uppercase tracking-wider text-gray-500">{t('vetConsole.locationFilters', 'Location Filters')}</p>
+            <div className="grid grid-cols-1 gap-2">
+              <select
+                value={selectedDistrict}
+                onChange={e => {
+                  setSelectedDistrict(e.target.value);
+                  setSelectedBlock('all');
+                  setSelectedVillage('all');
+                }}
+                className="form-select text-xs"
+                aria-label={t('common.district', 'District')}
+              >
+                <option value="all">{t('vetConsole.allDistricts', 'All Districts')}</option>
+                {districtOptions.map(district => <option key={district.name} value={district.name}>{district.name}</option>)}
+              </select>
+              <select
+                value={selectedBlock}
+                onChange={e => {
+                  setSelectedBlock(e.target.value);
+                  setSelectedVillage('all');
+                }}
+                className="form-select text-xs"
+                aria-label={t('common.block', 'Block')}
+              >
+                <option value="all">{t('vetConsole.allBlocksTalukas', 'All Blocks / Talukas')}</option>
+                {blockOptions.map(block => <option key={`${block.district}-${block.name}`} value={block.name}>{block.name} ({block.district})</option>)}
+              </select>
+              <select
+                value={selectedVillage}
+                onChange={e => setSelectedVillage(e.target.value)}
+                className="form-select text-xs"
+                aria-label={t('common.village', 'Village')}
+              >
+                <option value="all">{t('vetConsole.allVillagesLocalities', 'All Villages / Localities')}</option>
+                {villageOptions.map(village => <option key={`${village.district}-${village.block}-${village.name}`} value={village.name}>{village.name} ({village.block}, {village.district})</option>)}
+              </select>
+            </div>
+          </div>
 
           {/* Cases List */}
           <div className="space-y-3 max-h-[680px] overflow-y-auto pr-1">
             {displayCases.length === 0 ? (
               <div className="card p-8 text-center text-gray-400 text-sm space-y-2">
                 <AlertTriangle size={32} className="mx-auto text-gray-300" />
-                <p className="font-600">No cases matching current filter.</p>
-                <p className="text-xs">Use the scenario preset buttons above to restore cases.</p>
+                <p className="font-600">{t('vetConsole.noMatchingCases', 'No cases matching current filter.')}</p>
+                <p className="text-xs">{t('vetConsole.restoreCasesHint', 'Use the scenario preset buttons above to restore cases.')}</p>
               </div>
             ) : (
               displayCases.map(c => {
@@ -522,7 +577,7 @@ export function VetConsolePage() {
                           {ir.species} · {ir.affectedAnimals}/{ir.totalAnimals} affected
                         </h3>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          📍 {ir.location.village}, {ir.location.district}
+                          📍 {ir.location.village}, {ir.location.block}, {ir.location.district}
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-1">
@@ -536,7 +591,7 @@ export function VetConsolePage() {
                         {format(new Date(ir.createdAt), 'dd MMM, HH:mm')}
                       </span>
                       <span className="font-600 text-purple-800">
-                        {c.vetAssessment ? '✓ Visited' : 'Pending Visit'}
+                        {c.vetAssessment ? `✓ ${t('vetConsole.visited', 'Visited')}` : t('vetConsole.pendingVisit', 'Pending Visit')}
                       </span>
                     </div>
                   </div>

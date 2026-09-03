@@ -109,11 +109,16 @@ export const MAHARASHTRA_GOVERNMENT_LOCATIONS = {
     },
     {
       name: 'Nashik',
-      talukas: ['Baglan', 'Chandvad', 'Deola', 'Dindori', 'Igatpuri', 'Kalwan', 'Malegaon', 'Nandgaon', 'Nashik', 'Niphad', 'Peth', 'Sinnar', 'Surgana', 'Trimbakeshwar', 'Yevla'].map(name => ({
+      talukas: ['Baglan', 'Chandvad', 'Deola', 'Dindori', 'Igatpuri', 'Kalwan', 'Malegaon', 'Nandgaon', 'Nashik', 'Niphad', 'Peth', 'Satana', 'Sinnar',  'Trimbakeshwar', 'Yevla'].map(name => ({
         name,
-        localities: name === 'Satana'
-          ? [{ name, type: 'town' }, { name: 'Antapur', type: 'village' }]
-          : [{ name, type: 'town' }],
+        localities:
+  name === 'Satana'
+    ? [
+        { name, type: 'town' },
+        { name: 'Antapur', type: 'village' },
+        { name: 'Taharabad', type: 'village' }]: 
+        [
+        { name, type: 'town' }],
       })),
     },
     {
