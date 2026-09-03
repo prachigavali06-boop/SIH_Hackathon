@@ -5,6 +5,7 @@
 // ============================================================
 
 import { Filter, RotateCcw, MapPin, Calendar } from 'lucide-react';
+import { MAHARASHTRA_GOVERNMENT_LOCATIONS } from '../../data/seed';
 
 export interface FilterState {
   state: string;
@@ -24,33 +25,34 @@ interface SurveillanceFilterBarProps {
 }
 
 const DISTRICT_MAP: Record<string, string[]> = {
-  Maharashtra: ['Nashik', 'Ahmednagar', 'Pune', 'Kolhapur'],
+  Maharashtra: MAHARASHTRA_GOVERNMENT_LOCATIONS.districts.map(district => district.name),
   Gujarat: ['Anand', 'Surat', 'Vadodara'],
 };
 
-const BLOCK_MAP: Record<string, string[]> = {
-  Nashik: ['Niphad', 'Sinnar', 'Dindori', 'Malegaon'],
-  Ahmednagar: ['Sangamner', 'Akole', 'Rahuri'],
-  Pune: ['Baramati', 'Haveli', 'Shirur'],
-  Kolhapur: ['Kagal', 'Karveer'],
+const BLOCK_MAP: Record<string, string[]> = Object.fromEntries(
+  MAHARASHTRA_GOVERNMENT_LOCATIONS.districts.map(district => [
+    district.name,
+    district.talukas.map(taluka => taluka.name),
+  ])
+);
+
+const VILLAGE_MAP: Record<string, string[]> = Object.fromEntries(
+  MAHARASHTRA_GOVERNMENT_LOCATIONS.districts.flatMap(district => district.talukas.map(taluka => [
+    taluka.name,
+    taluka.localities.map(locality => locality.name),
+  ]))
+);
+
+const LEGACY_BLOCK_MAP: Record<string, string[]> = {
   Anand: ['Anand', 'Petlad'],
   Surat: ['Choryasi', 'Kamrej'],
   Vadodara: ['Dabhoi', 'Karjan'],
 };
 
-const VILLAGE_MAP: Record<string, string[]> = {
-  Niphad: ['Chandori', 'Niphad', 'Ozar', 'Pimpalnare', 'Vadner'],
-  Sinnar: ['Devpur', 'Wavi'],
-  Dindori: ['Pimpalnare', 'Vani'],
-  Sangamner: ['Vadner', 'Akole'],
-  Baramati: ['Shirsuphal', 'Bhigwan'],
-  Kagal: ['Murgud', 'Sonage'],
-};
-
 export function SurveillanceFilterBar({ filters, onFilterChange, onReset }: SurveillanceFilterBarProps) {
-  const availableDistricts = filters.state !== 'all' ? (DISTRICT_MAP[filters.state] || []) : ['Nashik', 'Ahmednagar', 'Pune', 'Kolhapur', 'Anand', 'Surat'];
-  const availableBlocks = filters.district !== 'all' ? (BLOCK_MAP[filters.district] || []) : ['Niphad', 'Sinnar', 'Dindori', 'Sangamner', 'Baramati', 'Kagal'];
-  const availableVillages = filters.block !== 'all' ? (VILLAGE_MAP[filters.block] || []) : ['Chandori', 'Niphad', 'Ozar', 'Devpur', 'Pimpalnare', 'Vadner', 'Shirsuphal', 'Murgud'];
+  const availableDistricts = filters.state !== 'all' ? (DISTRICT_MAP[filters.state] || []) : [...DISTRICT_MAP.Maharashtra, 'Anand', 'Surat'];
+  const availableBlocks = filters.district !== 'all' ? (BLOCK_MAP[filters.district] || LEGACY_BLOCK_MAP[filters.district] || []) : Object.values(BLOCK_MAP).flat().slice(0, 12);
+  const availableVillages = filters.block !== 'all' ? (VILLAGE_MAP[filters.block] || []) : Object.values(VILLAGE_MAP).flat().slice(0, 12);
 
   return (
     <div className="card p-4 space-y-3 bg-white border border-gray-200 shadow-sm">

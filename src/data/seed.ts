@@ -85,48 +85,59 @@ export const MAHARASHTRA_GOVERNMENT_LOCATIONS = {
   state: 'Maharashtra',
   districts: [
     {
-      name: 'Nashik',
-      talukas: [
-        {
-          name: 'Niphad',
-          localities: [
-            { name: 'Chandori', type: 'village' },
-          ],
-        },
-      ],
+      name: 'Ahilyanagar',
+      talukas: ['Akole', 'Jamkhed', 'Karjat', 'Kopargaon', 'Nagar', 'Nevasa', 'Parner', 'Pathardi', 'Rahata', 'Rahuri', 'Sangamner', 'Shevgaon', 'Shrigonda', 'Shrirampur'].map(name => ({
+        name,
+        localities: name === 'Akole'
+          ? [{ name, type: 'town' }, { name: 'Padoshi', type: 'village' }]
+          : [{ name, type: 'town' }],
+      })),
     },
     {
-      name: 'Solapur',
-      talukas: [
-        {
-          name: 'Barshi',
-          localities: [
-            { name: 'Padoshi', type: 'village' },
-          ],
-        },
-      ],
+      name: 'Kolhapur',
+      talukas: ['Ajra', 'Bhudargad', 'Chandgad', 'Gadhinglaj', 'Gaganbawada', 'Hatkanangle', 'Kagal', 'Karvir', 'Panhala', 'Radhanagari', 'Shahuwadi', 'Shirol'].map(name => ({
+        name,
+        localities: [{ name, type: 'town' }],
+      })),
     },
     {
       name: 'Latur',
-      talukas: [
-        {
-          name: 'Latur',
-          localities: [
-            { name: 'Latur City', type: 'locality' },
-          ],
-        },
-      ],
+      talukas: ['Ahmadpur', 'Ausa', 'Chakur', 'Deoni', 'Jalkot', 'Latur', 'Nilanga', 'Renapur', 'Shirur Anantpal', 'Udgir'].map(name => ({
+        name,
+        localities: [{ name, type: 'town' }],
+      })),
     },
     {
-      name: 'Ahilyanagar',
-      talukas: [
-        {
-          name: 'Ahilyanagar',
-          localities: [
-            { name: 'Ahilyanagar City', type: 'locality' },
-          ],
-        },
-      ],
+      name: 'Nashik',
+      talukas: ['Baglan', 'Chandvad', 'Deola', 'Dindori', 'Igatpuri', 'Kalwan', 'Malegaon', 'Nandgaon', 'Nashik', 'Niphad', 'Peth', 'Sinnar', 'Surgana', 'Trimbakeshwar', 'Yevla'].map(name => ({
+        name,
+        localities: name === 'Satana'
+          ? [{ name, type: 'town' }, { name: 'Antapur', type: 'village' }]
+          : [{ name, type: 'town' }],
+      })),
+    },
+    {
+      name: 'Pune',
+      talukas: ['Ambegaon', 'Baramati', 'Bhor', 'Daund', 'Haveli', 'Indapur', 'Junnar', 'Khed', 'Mawal', 'Mulshi', 'Pune City', 'Purandhar', 'Shirur', 'Velhe'].map(name => ({
+        name,
+        localities: [{ name, type: 'town' }],
+      })),
+    },
+    {
+      name: 'Satara',
+      talukas: ['Jaoli', 'Karad', 'Khandala', 'Khatav', 'Koregaon', 'Mahabaleshwar', 'Man', 'Patan', 'Phaltan', 'Satara', 'Wai'].map(name => ({
+        name,
+        localities: [{ name, type: 'town' }],
+      })),
+    },
+    {
+      name: 'Solapur',
+      talukas: ['Akkalkot', 'Barshi', 'Karmala', 'Madha', 'Malshiras', 'Mangalvedhe', 'Mohol', 'Pandharpur', 'Sangola', 'Solapur North', 'Solapur South'].map(name => ({
+        name,
+        localities: name === 'Barshi'
+          ? [{ name, type: 'town' }, { name: 'Mungshi', type: 'village' }]
+          : [{ name, type: 'town' }],
+      })),
     },
   ] satisfies GovernmentDistrictNode[],
 };
@@ -265,7 +276,7 @@ export const SYNTHETIC_MAP_CASES: ExtendedMapCase[] = [
   { id: 'LV-2026-00003', lat: 20.0412, lng: 73.8512, riskBand: 'moderate', species: 'goat',    count: 12, disease: 'PPR', state: 'Maharashtra', district: 'Nashik', block: 'Sinnar', village: 'Devpur', status: 'sample_collected', clusterId: 'CL-2026-002', reportedAt: '2026-08-25T11:20:00Z' },
   { id: 'LV-2026-00004', lat: 19.9724, lng: 73.7650, riskBand: 'high',     species: 'cattle',  count: 5,  disease: 'BQ',  state: 'Maharashtra', district: 'Nashik', block: 'Dindori', village: 'Pimpalnare', status: 'triaged', clusterId: 'CL-2026-001', reportedAt: '2026-08-23T14:10:00Z' },
   { id: 'LV-2026-00005', lat: 20.0189, lng: 73.8030, riskBand: 'critical', species: 'buffalo', count: 4,  disease: 'HS',  state: 'Maharashtra', district: 'Nashik', block: 'Niphad', village: 'Ozar', status: 'confirmed', clusterId: 'CL-2026-001', reportedAt: '2026-08-24T16:05:00Z' },
-  { id: 'LV-2026-00006', lat: 19.5500, lng: 74.2000, riskBand: 'high',     species: 'cattle',  count: 9,  disease: 'FMD', state: 'Maharashtra', district: 'Ahmednagar', block: 'Sangamner', village: 'Vadner', status: 'sample_dispatched', clusterId: 'CL-2026-003', reportedAt: '2026-08-25T08:30:00Z' },
+  { id: 'LV-2026-00006', lat: 19.5500, lng: 74.2000, riskBand: 'high',     species: 'cattle',  count: 9,  disease: 'FMD', state: 'Maharashtra', district: 'Ahilyanagar', block: 'Sangamner', village: 'Vadner', status: 'sample_dispatched', clusterId: 'CL-2026-003', reportedAt: '2026-08-25T08:30:00Z' },
   { id: 'LV-2026-00007', lat: 18.5204, lng: 73.8567, riskBand: 'moderate', species: 'sheep',   count: 15, disease: 'PPR', state: 'Maharashtra', district: 'Pune', block: 'Baramati', village: 'Shirsuphal', status: 'reported', clusterId: 'CL-2026-004', reportedAt: '2026-08-26T10:00:00Z' },
   { id: 'LV-2026-00008', lat: 16.7050, lng: 74.2433, riskBand: 'low',      species: 'goat',    count: 2,  disease: 'CCPP', state: 'Maharashtra', district: 'Kolhapur', block: 'Kagal', village: 'Murgud', status: 'closed', reportedAt: '2026-08-21T12:00:00Z' },
 ];
@@ -335,7 +346,7 @@ export const SYNTHETIC_CLUSTERS: OutbreakCluster[] = [
     caseIds: ['LV-2026-00006'],
     primaryDisease: 'FMD',
     affectedState: 'Maharashtra',
-    affectedDistrict: 'Ahmednagar',
+    affectedDistrict: 'Ahilyanagar',
     affectedBlocks: ['Sangamner'],
     affectedVillages: ['Vadner', 'Akole'],
     riskLevel: 'high',
@@ -391,13 +402,13 @@ export const SYNTHETIC_DASHBOARD_STATS: DashboardStats = {
     { district: 'Ahilyanagar', count: 9,  riskBand: 'moderate' },
     { district: 'Pune',       count: 6,  riskBand: 'moderate' },
     { district: 'Nashik',     count: 18, riskBand: 'critical' },
-    { district: 'Ahmednagar', count: 12, riskBand: 'high'     },
+    { district: 'Ahilyanagar', count: 12, riskBand: 'high'     },
     { district: 'Pune',       count: 7,  riskBand: 'moderate' },
     { district: 'Kolhapur',   count: 5,  riskBand: 'low'      },
   ],
   districtComparison: [
     { district: 'Nashik',     activeCases: 18, confirmedCases: 8, riskBand: 'critical', vaccinationCoverage: 52.4 },
-    { district: 'Ahmednagar', activeCases: 12, confirmedCases: 5, riskBand: 'high',     vaccinationCoverage: 58.0 },
+    { district: 'Ahilyanagar', activeCases: 12, confirmedCases: 5, riskBand: 'high',     vaccinationCoverage: 58.0 },
     { district: 'Pune',       activeCases: 7,  confirmedCases: 2, riskBand: 'moderate', vaccinationCoverage: 71.2 },
     { district: 'Kolhapur',   activeCases: 5,  confirmedCases: 1, riskBand: 'low',      vaccinationCoverage: 84.5 },
   ],
