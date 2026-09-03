@@ -61,10 +61,75 @@ export const DEMO_USERS: User[] = [
     id: 'u-admin-01',
     name: 'Admin User',
     role: 'admin',
-    district: 'Maharashtra',
+    district: 'Nashik',
     avatarInitials: 'AU',
   },
 ];
+
+export type GovernmentLocationNode = {
+  name: string;
+  type: 'village' | 'locality' | 'town';
+};
+
+export type GovernmentTalukaNode = {
+  name: string;
+  localities: GovernmentLocationNode[];
+};
+
+export type GovernmentDistrictNode = {
+  name: string;
+  talukas: GovernmentTalukaNode[];
+};
+
+export const MAHARASHTRA_GOVERNMENT_LOCATIONS = {
+  state: 'Maharashtra',
+  districts: [
+    {
+      name: 'Nashik',
+      talukas: [
+        {
+          name: 'Niphad',
+          localities: [
+            { name: 'Chandori', type: 'village' },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'Solapur',
+      talukas: [
+        {
+          name: 'Barshi',
+          localities: [
+            { name: 'Padoshi', type: 'village' },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'Latur',
+      talukas: [
+        {
+          name: 'Latur',
+          localities: [
+            { name: 'Latur City', type: 'locality' },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'Ahilyanagar',
+      talukas: [
+        {
+          name: 'Ahilyanagar',
+          localities: [
+            { name: 'Ahilyanagar City', type: 'locality' },
+          ],
+        },
+      ],
+    },
+  ] satisfies GovernmentDistrictNode[],
+};
 
 export const DEMO_CREDENTIALS: Record<string, { password: string; userId: string }> = {
   'farmer@sentinel.demo':    { password: 'demo1234', userId: 'u-farmer-01' },
@@ -81,39 +146,39 @@ export const DEMO_CREDENTIALS: Record<string, { password: string; userId: string
 
 export const SYMPTOM_CATALOG: Symptom[] = [
   // General
-  { id: 'fever',          label: 'Fever / High body temperature',    category: 'general' },
-  { id: 'lethargy',       label: 'Lethargy / Weakness',              category: 'general' },
-  { id: 'anorexia',       label: 'Loss of appetite',                 category: 'general' },
-  { id: 'sudden_death',   label: 'Sudden death',                     category: 'general' },
-  { id: 'weight_loss',    label: 'Rapid weight loss',                category: 'general' },
+  { id: 'fever',          label: 'Fever / High body temperature',    labelHi: 'बुखार / तेज तापमान',              category: 'general' },
+  { id: 'lethargy',       label: 'Lethargy / Weakness',              labelHi: 'सुस्ती / शारीरिक कमजोरी',         category: 'general' },
+  { id: 'anorexia',       label: 'Loss of appetite',                 labelHi: 'भूख न लगना / चारा न खाना',         category: 'general' },
+  { id: 'sudden_death',   label: 'Sudden death',                     labelHi: 'अचानक मृत्यु',                    category: 'general' },
+  { id: 'weight_loss',    label: 'Rapid weight loss',                labelHi: 'तेजी से वजन घटना',                category: 'general' },
 
   // Respiratory
-  { id: 'cough',          label: 'Cough / Sneezing',                 category: 'respiratory' },
-  { id: 'nasal_discharge',label: 'Nasal discharge',                  category: 'respiratory' },
-  { id: 'dyspnea',        label: 'Difficulty breathing',             category: 'respiratory' },
-  { id: 'pneumonia',      label: 'Signs of pneumonia',               category: 'respiratory' },
+  { id: 'cough',          label: 'Cough / Sneezing',                 labelHi: 'खांसी / छींकना',                  category: 'respiratory' },
+  { id: 'nasal_discharge',label: 'Nasal discharge',                  labelHi: 'नाक से स्राव / पानी बहना',         category: 'respiratory' },
+  { id: 'dyspnea',        label: 'Difficulty breathing',             labelHi: 'सांस लेने में कठिनाई',            category: 'respiratory' },
+  { id: 'pneumonia',      label: 'Signs of pneumonia',               labelHi: 'निमोनिया के लक्षण',               category: 'respiratory' },
 
   // Digestive
-  { id: 'diarrhea',       label: 'Diarrhea (loose stools)',          category: 'digestive' },
-  { id: 'bloody_diarrhea',label: 'Bloody diarrhea',                  category: 'digestive' },
-  { id: 'bloat',          label: 'Abdominal bloat / distension',     category: 'digestive' },
-  { id: 'drooling',       label: 'Excessive salivation / drooling',  category: 'digestive' },
+  { id: 'diarrhea',       label: 'Diarrhea (loose stools)',          labelHi: 'दस्त (पतले गोबर)',                category: 'digestive' },
+  { id: 'bloody_diarrhea',label: 'Bloody diarrhea',                  labelHi: 'खूनी दस्त',                       category: 'digestive' },
+  { id: 'bloat',          label: 'Abdominal bloat / distension',     labelHi: 'पेट फूलना / अफारा',               category: 'digestive' },
+  { id: 'drooling',       label: 'Excessive salivation / drooling',  labelHi: 'मुंह से अत्यधिक लार गिरना',       category: 'digestive' },
 
   // Skin & External
-  { id: 'vesicles_mouth', label: 'Blisters/vesicles on mouth',       category: 'skin' },
-  { id: 'vesicles_feet',  label: 'Blisters/vesicles on feet',        category: 'skin' },
-  { id: 'skin_nodules',   label: 'Skin nodules / lumps',             category: 'skin' },
-  { id: 'swelling_limbs', label: 'Swelling of limbs',                category: 'skin' },
-  { id: 'lameness',       label: 'Lameness / difficulty walking',    category: 'skin' },
+  { id: 'vesicles_mouth', label: 'Blisters/vesicles on mouth',       labelHi: 'मुंह व जीभ पर छाले / दाने',        category: 'skin' },
+  { id: 'vesicles_feet',  label: 'Blisters/vesicles on feet',        labelHi: 'खुर व पैरों में छाले',            category: 'skin' },
+  { id: 'skin_nodules',   label: 'Skin nodules / lumps',             labelHi: 'त्वचा पर गांठें / ढेले (लंपी)',     category: 'skin' },
+  { id: 'swelling_limbs', label: 'Swelling of limbs',                labelHi: 'पैरों व जोड़ों में सूजन',          category: 'skin' },
+  { id: 'lameness',       label: 'Lameness / difficulty walking',    labelHi: 'लंगड़ाना / चलने में असमर्थ',        category: 'skin' },
 
   // Neurological
-  { id: 'convulsions',    label: 'Convulsions / seizures',           category: 'neurological' },
-  { id: 'head_pressing',  label: 'Head pressing / circling',        category: 'neurological' },
-  { id: 'aggression',     label: 'Unusual aggression',               category: 'neurological' },
+  { id: 'convulsions',    label: 'Convulsions / seizures',           labelHi: 'दौरे पड़ना / कंपन',               category: 'neurological' },
+  { id: 'head_pressing',  label: 'Head pressing / circling',        labelHi: 'सिर दीवार से टिकाना / चक्कर',     category: 'neurological' },
+  { id: 'aggression',     label: 'Unusual aggression',               labelHi: 'असामान्य आक्रामकता',              category: 'neurological' },
 
   // Reproductive
-  { id: 'abortion',       label: 'Abortion / stillbirths',           category: 'reproductive' },
-  { id: 'milk_drop',      label: 'Sudden drop in milk yield',        category: 'reproductive' },
+  { id: 'abortion',       label: 'Abortion / stillbirths',           labelHi: 'गर्भपात / मृत प्रसव',             category: 'reproductive' },
+  { id: 'milk_drop',      label: 'Sudden drop in milk yield',        labelHi: 'दूध उत्पादन में भारी गिरावट',      category: 'reproductive' },
 ];
 
 // ----------------------------------------------------------------
@@ -322,6 +387,9 @@ export const SYNTHETIC_DASHBOARD_STATS: DashboardStats = {
     { riskBand: 'low',      count: 8 },
   ],
   districtHotspots: [
+    { district: 'Nashik',     count: 14, riskBand: 'high'     },
+    { district: 'Ahilyanagar', count: 9,  riskBand: 'moderate' },
+    { district: 'Pune',       count: 6,  riskBand: 'moderate' },
     { district: 'Nashik',     count: 18, riskBand: 'critical' },
     { district: 'Ahmednagar', count: 12, riskBand: 'high'     },
     { district: 'Pune',       count: 7,  riskBand: 'moderate' },

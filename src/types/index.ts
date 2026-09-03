@@ -1,11 +1,11 @@
 // ============================================================
 // LIVESTOCK SENTINEL — Shared Core Data Models & API Contracts
-// Member 1 — Backend, Supabase Integration & Foundation Layer
+// Member 1 — Platform Core & Integration Layer Foundation
 // Pre-Merge Safety Compliant: Triage & Risk Scoring (No Autonomous Diagnosis)
 // ============================================================
 
 // ----------------------------------------------------------------
-// STEP 5: Roles & Access Control
+// 1. Roles & Access Control
 // ----------------------------------------------------------------
 
 export type UserRole =
@@ -34,7 +34,7 @@ export interface User {
 }
 
 // ----------------------------------------------------------------
-// STEP 3: Canonical Case ID Standardizer
+// 2. Canonical Case ID Standardizer
 // ----------------------------------------------------------------
 
 /**
@@ -94,10 +94,42 @@ export type SuspectedDisease =
   | 'unknown';
 
 // ----------------------------------------------------------------
-// STEP 2: Strongly Typed Models for All 16 Entities
+// 3. Offline Synchronization Metadata Model (Task 8)
 // ----------------------------------------------------------------
 
-// 1. Animal
+export type SyncStatus = 'PENDING' | 'SYNCING' | 'SYNCED' | 'FAILED' | 'CONFLICT';
+
+export interface SyncMetadata {
+  localId?: string;
+  serverId?: string;
+  syncStatus: SyncStatus;
+  createdOffline: boolean;
+  lastSyncedAt?: string;
+  syncAttempts?: number;
+  conflictDetails?: string;
+}
+
+// ----------------------------------------------------------------
+// 4. Geolocation Model (Task 3)
+// ----------------------------------------------------------------
+
+export interface GeoLocation {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  village: string;
+  gramPanchayat?: string;
+  block: string;
+  district: string;
+  state: string;
+  pincode?: string;
+}
+
+// ----------------------------------------------------------------
+// 5. Core Domain Entities
+// ----------------------------------------------------------------
+
+// Animal
 export interface Animal {
   id: string;
   farmId: string;
@@ -111,12 +143,13 @@ export interface Animal {
   updatedAt?: string;
 }
 
-// 2. Farm / Herd
+// Farm / Herd
 export interface FarmOrHerd {
   id: string;
   ownerFarmerId: string;
   farmName?: string;
   village: string;
+  gramPanchayat?: string;
   block: string;
   district: string;
   state: string;
@@ -128,7 +161,7 @@ export interface FarmOrHerd {
   updatedAt?: string;
 }
 
-// 3. HealthCase (Master Record linked via Canonical Case ID)
+// HealthCase (Master Record linked via Canonical Case ID)
 export interface HealthCase {
   id: string;                 // Canonical ID e.g. LV-2026-00001
   farmId?: string;
@@ -141,24 +174,27 @@ export interface HealthCase {
   affectedAnimalCount: number;
   deadAnimalCount: number;
   village: string;
+  gramPanchayat?: string;
   block: string;
   district: string;
   state: string;
   latitude: number;
   longitude: number;
-  syndromeCategory?: string;           // Non-definitive AI/field syndrome (e.g., "Vesicular Lesions")
+  syndromeCategory?: string;           // Non-definitive AI/field syndrome
   suspectedDisease?: SuspectedDisease;  // Non-definitive AI suspicion
   confirmedDisease?: SuspectedDisease;  // DEFINITIVE: Populated ONLY by Vet/Lab workflow
   assignedVetUserId?: string;
   assignedLabUserId?: string;
   createdAt: string;
   updatedAt: string;
+  syncMetadata?: SyncMetadata;
 }
 
-// 4. SymptomReport
+// SymptomReport
 export interface Symptom {
   id: string;
   label: string;
+  labelHi?: string;
   category: 'general' | 'respiratory' | 'digestive' | 'skin' | 'neurological' | 'reproductive';
 }
 
@@ -170,9 +206,71 @@ export interface SymptomReport {
   durationDays: number;
   additionalNotes?: string;
   reportedAt: string;
+  syncMetadata?: SyncMetadata;
 }
 
-// 5. VaccinationRecord
+// ----------------------------------------------------------------
+// 6. Multimodal Evidence Model (Task 2)
+// ----------------------------------------------------------------
+
+export type EvidenceType =
+  | 'TEXT'
+  | 'VOICE'
+  | 'IMAGE'
+  | 'FIELD_OBSERVATION'
+  | 'VACCINATION'
+  | 'ENVIRONMENTAL'
+  | 'MOVEMENT';
+
+export interface Evidence {
+  id: string;
+  caseId: string;             // Canonical Case ID
+  type: EvidenceType;
+  source: string;             // e.g. "farmer_app", "vet_mobile", "sat_weather"
+  uri?: string;               // Audio file URL or image blob reference
+  transcript?: string;        // Voice note transcription if applicable
+  metadata?: Record<string, any>;
+  createdAt: string;
+  syncMetadata?: SyncMetadata;
+}
+
+// ----------------------------------------------------------------
+// 7. Event-Driven Case Timeline Model (Task 1)
+// ----------------------------------------------------------------
+
+export type CaseEventType =
+  | 'CASE_CREATED'
+  | 'SYMPTOMS_REPORTED'
+  | 'VOICE_ADDED'
+  | 'IMAGE_ADDED'
+  | 'RISK_ASSESSED'
+  | 'CLUSTER_DETECTED'
+  | 'VET_ASSIGNED'
+  | 'FIELD_VISIT_COMPLETED'
+  | 'SAMPLE_COLLECTED'
+  | 'SAMPLE_DISPATCHED'
+  | 'LAB_RECEIVED'
+  | 'LAB_RESULT_UPDATED'
+  | 'ALERT_SENT'
+  | 'RESPONSE_STARTED'
+  | 'CASE_CONTAINED'
+  | 'CASE_CLOSED';
+
+export interface CaseEvent {
+  id: string;
+  caseId: string;             // Canonical Case ID
+  actorUserId?: string;
+  actorRole: UserRole;
+  eventType: CaseEventType;
+  timestamp: string;
+  summary: string;
+  metadata?: Record<string, any>;
+}
+
+// ----------------------------------------------------------------
+// 8. Vaccination & Treatment Models (Task 4)
+// ----------------------------------------------------------------
+
 export interface VaccinationRecord {
   id: string;
   farmId?: string;
@@ -185,7 +283,23 @@ export interface VaccinationRecord {
   nextDueDate?: string;
 }
 
-// 6. TreatmentRecord
+export interface VaccinationCoverage {
+  id: string;
+  district: string;
+  block: string;
+  village?: string;
+  species: AnimalSpecies;
+  eligibleAnimalCount: number;
+  vaccinatedAnimalCount: number;
+  coveragePercentage: number;          // (vaccinated / eligible) * 100
+  riskThresholdPercentage?: number;     // Configurable threshold (e.g. 75%)
+  isVulnerable?: boolean;              // coveragePercentage < riskThresholdPercentage
+  campaignDate?: string;
+  vaccineType: string;
+  source: string;
+  updatedAt: string;
+}
+
 export interface TreatmentRecord {
   id: string;
   caseId: string;             // Canonical Case ID
@@ -196,13 +310,26 @@ export interface TreatmentRecord {
   administeredAt: string;
 }
 
-// 7. RiskAssessment (AI / Automated Triage Output — NO Autonomous Diagnosis)
-export interface TriageFactor {
-  label: string;
-  value: string;
-  weight: number;
+// ----------------------------------------------------------------
+// 9. Risk Factor & Assessment Model (Task 6)
+// ----------------------------------------------------------------
+
+export interface RiskFactor {
+  // New explainability fields (preferred for new implementations)
+  factorName?: string;        // e.g. "Cluster Proximity", "Vaccination Gap"
+  contribution?: number;      // 0 - 100 contribution weight
+  evidence?: string;          // Evidence string (descriptive)
+  source?: string;            // e.g. "spatial_engine", "herd_history"
+  timestamp?: string;
   direction: 'risk' | 'protective';
+  // Backwards-compatible aliases (existing seed data + AIExplanationPanel)
+  label?: string;             // alias for factorName
+  value?: string;             // alias for evidence
+  weight?: number;            // alias for contribution
 }
+
+// Backwards-compatible alias
+export type TriageFactor = RiskFactor;
 
 export interface RiskAssessment {
   id: string;
@@ -211,16 +338,20 @@ export interface RiskAssessment {
   riskBand: RiskBand;
   syndromeCategory?: string;           // e.g. "Vesicular Disease Pattern"
   suspectedDisease?: SuspectedDisease; // NON-DEFINITIVE AI suspicion
-  factors: TriageFactor[];             // Contributing factors
-  recommendation: string;
-  requiresVeterinaryAssessment?: boolean; // Default true (Safety rule)
-  disclaimer: string;
+  factors: RiskFactor[];               // Contributing factors
   modelVersion: string;
+  requiresVeterinaryAssessment?: boolean; // Default true (Safety rule)
+  recommendation: string;
+  disclaimer: string;
   isSynthetic: boolean;
   computedAt: string;
+  syncMetadata?: SyncMetadata;
 }
 
-// 8. OutbreakCluster (Spatio-Temporal Detection)
+// ----------------------------------------------------------------
+// 10. Spatial Outbreak & Livestock Movement Models (Task 5)
+// ----------------------------------------------------------------
+
 export interface OutbreakCluster {
   id: string;
   clusterId?: string;
@@ -249,7 +380,24 @@ export interface OutbreakCluster {
   status: 'active' | 'monitoring' | 'contained' | 'resolved';
 }
 
-// 9. VetAssignment
+export interface MovementRoute {
+  id: string;
+  marketNodeName: string;
+  sourceLocation: GeoLocation;
+  destinationLocation: GeoLocation;
+  routeType: 'interstate' | 'interdistrict' | 'local_market' | 'transhumance';
+  estimatedMovementVolume: number;     // Head count per time frame
+  timePeriod: string;                  // e.g. "weekly", "monthly"
+  confidence: 'high' | 'medium' | 'low';
+  source: string;
+  riskLevel?: RiskBand;
+  createdAt: string;
+}
+
+// ----------------------------------------------------------------
+// 11. Veterinary, Field Visit & Sample Models
+// ----------------------------------------------------------------
+
 export interface VetAssignment {
   id: string;
   caseId: string;             // Canonical Case ID
@@ -260,7 +408,6 @@ export interface VetAssignment {
   notes?: string;
 }
 
-// 10. FieldVisit (Authorized Veterinary Clinical Diagnosis)
 export interface FieldVisit {
   id: string;
   caseId: string;             // Canonical Case ID
@@ -286,7 +433,6 @@ export interface FieldVisit {
   photos?: string[];
 }
 
-// 11. Sample
 export interface ChainStep {
   step: string;
   timestamp: string;
@@ -310,7 +456,6 @@ export interface Sample {
   chainOfCustody: ChainStep[];
 }
 
-// 12. LabResult (DEFINITIVE Laboratory Diagnostic Outcome)
 export interface LabResult {
   id: string;
   sampleId: string;
@@ -330,17 +475,32 @@ export interface LabResult {
   completedAt: string;
 }
 
-// 13. Alert
+// ----------------------------------------------------------------
+// 12. Alert Event Model (Task 7)
+// ----------------------------------------------------------------
+
 export type NotificationSeverity = 'info' | 'warning' | 'danger' | 'success' | 'critical';
+
+export type AlertType =
+  | 'HIGH_RISK_CASE'
+  | 'EMERGING_CLUSTER'
+  | 'POSITIVE_LAB_RESULT'
+  | 'VACCINATION_GAP'
+  | 'RESPONSE_DELAY'
+  | 'SYMPTOM_SPIKE'
+  | 'MOVEMENT_RISK';
 
 export interface Alert {
   id: string;
+  alertType?: AlertType;
   caseId?: string;            // Canonical Case ID
+  clusterId?: string;
   severity: NotificationSeverity;
   title: string;
   message: string;
   targetRoles?: UserRole[];
   targetDistrict?: string;
+  location?: GeoLocation;
   isRead: boolean;
   actionPath?: string;
   actionLabel?: string;
@@ -348,7 +508,6 @@ export interface Alert {
   timestamp?: string;          // alias for backwards compatibility
 }
 
-// 14. Advisory
 export interface Advisory {
   id: string;
   title: string;
@@ -362,7 +521,10 @@ export interface Advisory {
   isPublic: boolean;
 }
 
-// 15. ResponseAction (Containment & Gov Actions)
+// ----------------------------------------------------------------
+// 13. Response Actions & Audit Trail (Task 10)
+// ----------------------------------------------------------------
+
 export interface ResponseAction {
   id: string;
   caseId: string;             // Canonical Case ID
@@ -377,19 +539,20 @@ export interface ResponseAction {
   targetAnimalCount?: number;
 }
 
+export interface AuditEvent {
+  id: string;
+  entityType: 'case' | 'sample' | 'alert' | 'user' | 'evidence' | 'containment';
+  entityId: string;
+  action: string;             // e.g. "REPORT_SUBMITTED", "AI_TRIAGED", "VET_ASSIGNED"
+  actorUserId: string;
+  actorRole: UserRole;
+  timestamp: string;
+  details?: string;           // Privacy safe non-sensitive summary
+}
+
 // ----------------------------------------------------------------
 // Backwards Compatibility Aliases for UI Components
 // ----------------------------------------------------------------
-
-export type GeoLocation = {
-  latitude: number;
-  longitude: number;
-  accuracy?: number;
-  village?: string;
-  block?: string;
-  district: string;
-  state: string;
-};
 
 export type IncidentReport = {
   id: string;
@@ -464,6 +627,9 @@ export type CaseRecord = {
   treatmentRecords?: TreatmentRecord[];
   containmentActions?: ContainmentAction[];
   timeline: TimelineEvent[];
+  evidences?: Evidence[];
+  caseEvents?: CaseEvent[];
+  syncMetadata?: SyncMetadata;
 };
 
 export type DashboardStats = {

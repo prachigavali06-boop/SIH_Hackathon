@@ -102,7 +102,7 @@ export function HighRiskExplainabilityPanel({
                 <div
                   className="progress-bar-fill"
                   style={{
-                    width: `${Math.min(factor.weight * 3, 100)}%`,
+                    width: `${Math.min((factor.weight ?? 0) * 3, 100)}%`,
                     backgroundColor: riskBand === 'critical' ? '#7c3aed' : '#dc2626',
                   }}
                 />

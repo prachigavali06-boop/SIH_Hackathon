@@ -76,15 +76,15 @@ export function OutbreakRadar({
   return (
     <div className="card p-0 overflow-hidden relative shadow-lg border border-gray-200" style={{ height: 'calc(100vh - 280px)', minHeight: 480 }}>
       {/* Map Control Bar Overlay */}
-      <div className="absolute top-3 left-3 z-[400] bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl shadow-md border border-gray-200 flex items-center gap-2 flex-wrap text-xs">
+      <div className="absolute top-2 sm:top-3 left-2 sm:left-3 z-[400] max-w-[calc(100%-1rem)] sm:max-w-[calc(100%-1.5rem)] bg-white/95 backdrop-blur-md px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl shadow-md border border-gray-200 flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs">
         <div className="flex items-center gap-1.5 font-700 text-gray-800 border-r pr-2">
-          <MapIcon size={14} className="text-green-700" />
-          <span>OUTBREAK RADAR GIS</span>
+          <MapIcon size={14} className="text-green-700 flex-shrink-0" />
+          <span className="text-[11px] sm:text-xs">OUTBREAK RADAR GIS</span>
         </div>
 
         <button
           onClick={() => setShowClusters(s => !s)}
-          className={`px-2 py-1 rounded-lg text-[11px] font-600 flex items-center gap-1 transition-all ${
+          className={`px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-600 flex items-center gap-1 transition-all ${
             showClusters ? 'bg-green-800 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
@@ -94,7 +94,7 @@ export function OutbreakRadar({
 
         <button
           onClick={() => setShowRiskZones(s => !s)}
-          className={`px-2 py-1 rounded-lg text-[11px] font-600 flex items-center gap-1 transition-all ${
+          className={`px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-600 flex items-center gap-1 transition-all ${
             showRiskZones ? 'bg-amber-700 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
@@ -102,7 +102,7 @@ export function OutbreakRadar({
           {showRiskZones ? 'Risk Heatmaps Active' : 'Show Risk Heatmaps'}
         </button>
 
-        <span className="text-[10px] text-gray-400 font-mono ml-auto">
+        <span className="hidden md:inline text-[10px] text-gray-400 font-mono ml-auto">
           Leaflet + OpenStreetMap · Synthetic Layer
         </span>
       </div>

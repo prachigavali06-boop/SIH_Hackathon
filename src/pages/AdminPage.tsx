@@ -3,16 +3,58 @@
 // User management, synthetic data reset, audit logging & Integration boundaries
 // ============================================================
 
-import { useState } from 'react';
-import { Settings, Shield, RefreshCw, Server, Users, Database, Activity, Network } from 'lucide-react';
-import { DEMO_USERS } from '../data/seed';
+import { useEffect, useMemo, useState } from 'react';
+
+import {
+  Settings,
+  Shield,
+  RefreshCw,
+  Server,
+  Users,
+  Database,
+  Activity,
+  Network,
+} from 'lucide-react';
+
+import {
+  DEMO_USERS,
+  MAHARASHTRA_GOVERNMENT_LOCATIONS,
+} from '../data/seed';
 import { StatCard } from '../components/ui/StatCard';
 import { Badge } from '../components/ui/Badge';
 import { IntegrationStatusCard } from '../components/dashboard/IntegrationStatusCard';
+import { useLanguage } from '../i18n/useLanguage';
+
+const DISTRICT_OPTIONS = MAHARASHTRA_GOVERNMENT_LOCATIONS.districts.map(d => d.name);
 
 export function AdminPage() {
+  const { t, tRole } = useLanguage();
   const [seeding, setSeeding] = useState(false);
   const [seedMsg, setSeedMsg] = useState('');
+  const [selectedDistrict, setSelectedDistrict] = useState(DISTRICT_OPTIONS[0]);
+  const [selectedTaluka, setSelectedTaluka] = useState('');
+  const [selectedLocality, setSelectedLocality] = useState('');
+
+  const districtData = useMemo(
+    () => MAHARASHTRA_GOVERNMENT_LOCATIONS.districts.find(d => d.name === selectedDistrict) ?? MAHARASHTRA_GOVERNMENT_LOCATIONS.districts[0],
+    [selectedDistrict]
+  );
+
+  useEffect(() => {
+    const taluka = districtData.talukas[0]?.name ?? '';
+    setSelectedTaluka(taluka);
+    setSelectedLocality(districtData.talukas[0]?.localities[0]?.name ?? '');
+  }, [districtData]);
+
+  const talukaData = districtData.talukas.find(t => t.name === selectedTaluka) ?? districtData.talukas[0];
+  const localityOptions = talukaData?.localities ?? [];
+
+  useEffect(() => {
+    if (!talukaData) return;
+    if (!localityOptions.some(l => l.name === selectedLocality)) {
+      setSelectedLocality(localityOptions[0]?.name ?? '');
+    }
+  }, [localityOptions, selectedLocality, talukaData]);
 
   const handleResetData = () => {
     setSeeding(true);
@@ -32,7 +74,7 @@ export function AdminPage() {
             Surveillance System Administration & System Health
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Role-Based Access Control · System Diagnostics · Integration Adapter Status · Synthetic Seed Controls
+            {t('admin.subtitle', 'Role assignments, audit logs, API telemetry & model configurations')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -92,6 +134,58 @@ export function AdminPage() {
       {/* Integration Boundaries & Stubs Card */}
       <IntegrationStatusCard />
 
+      {/* Government location registry */}
+      <div className="card p-5 space-y-4">
+        <h2 className="text-sm font-700 text-gray-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
+          <Settings size={16} /> Government Location Registry
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <label className="space-y-1 text-xs font-600 text-gray-700">
+            <span>District</span>
+            <select
+              value={selectedDistrict}
+              onChange={e => setSelectedDistrict(e.target.value)}
+              className="form-input"
+            >
+              {DISTRICT_OPTIONS.map(dist => (
+                <option key={dist} value={dist}>{dist}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="space-y-1 text-xs font-600 text-gray-700">
+            <span>Taluka</span>
+            <select
+              value={selectedTaluka}
+              onChange={e => setSelectedTaluka(e.target.value)}
+              className="form-input"
+            >
+              {districtData.talukas.map(taluka => (
+                <option key={taluka.name} value={taluka.name}>{taluka.name}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="space-y-1 text-xs font-600 text-gray-700">
+            <span>Village / Locality</span>
+            <select
+              value={selectedLocality}
+              onChange={e => setSelectedLocality(e.target.value)}
+              className="form-input"
+            >
+              {localityOptions.map(locality => (
+                <option key={locality.name} value={locality.name}>{locality.name}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+          Selected hierarchy: Maharashtra → {selectedDistrict} → {selectedTaluka} → {selectedLocality}
+        </div>
+      </div>
+
       {/* Users Management */}
       <div className="card p-5 space-y-4 bg-white border border-gray-200">
         <h2 className="text-sm font-700 text-gray-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
@@ -115,7 +209,7 @@ export function AdminPage() {
                   <td className="font-600 text-gray-900">{user.name}</td>
                   <td>
                     <span className="chip uppercase text-[10px] tracking-wider">
-                      {user.role.replace('_', ' ')}
+                      {tRole(user.role)}
                     </span>
                   </td>
                   <td className="text-gray-600">{user.district}</td>
