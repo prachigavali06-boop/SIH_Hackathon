@@ -18,7 +18,7 @@ interface LanguageSelectorProps {
 }
 
 export function LanguageSelector({ variant = 'header' }: LanguageSelectorProps) {
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -61,8 +61,8 @@ export function LanguageSelector({ variant = 'header' }: LanguageSelectorProps) 
         type="button"
         onClick={() => setIsOpen(prev => !prev)}
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 bg-white text-gray-800 transition-all text-xs font-700 shadow-2xs"
-        aria-label={language === 'mr' ? 'भाषा निवडा' : 'Select Language'}
-        title={language === 'mr' ? 'भाषा बदला' : 'Change language / भाषा बदलें / भाषा बदला'}
+        aria-label={t('common.language', 'Select Language')}
+        title={t('common.changeLanguage', 'Change language / भाषा बदलें / भाषा बदला')}
       >
         <Globe size={14} className="text-emerald-700 flex-shrink-0" />
         <span className="hidden sm:inline font-semibold">{currentLang.nativeLabel}</span>
@@ -72,7 +72,7 @@ export function LanguageSelector({ variant = 'header' }: LanguageSelectorProps) 
       {isOpen && (
         <div className="absolute right-0 top-full mt-1.5 w-36 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
           <div className="px-3 py-1.5 text-[10px] font-800 uppercase tracking-wider text-gray-400 border-b border-gray-100">
-            {language === 'mr' ? 'भाषा' : 'Language / भाषा'}
+            {t('common.language', 'Language / भाषा')}
           </div>
           {LANGUAGES.map(l => (
             <button

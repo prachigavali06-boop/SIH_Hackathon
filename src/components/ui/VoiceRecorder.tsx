@@ -25,6 +25,7 @@ export function VoiceRecorder({
   isHindi = false,
 }: VoiceRecorderProps) {
   const { t, language } = useLanguage();
+  const localized = isHindi || language !== 'en';
   const [isRecording, setIsRecording] = useState(false);
 
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -154,13 +155,13 @@ export function VoiceRecorder({
         err.name === 'PermissionDeniedError'
       ) {
         setErrorMsg(
-          isHindi
+          localized
             ? 'माइक्रोफ़ोन की अनुमति अस्वीकृत है। कृपया नीचे सीधे लक्षण लिखें।'
             : 'Microphone permission was denied. You can still type your notes below.'
         );
       } else {
         setErrorMsg(
-          isHindi
+          localized
             ? 'ऑडियो रिकॉर्डिंग उपलब्ध नहीं है। कृपया विवरण टाइप करें।'
             : 'Audio recording is unavailable. Please type your notes manually below.'
         );
@@ -240,10 +241,10 @@ export function VoiceRecorder({
           </div>
           <div>
             <h4 className="text-xs font-700 uppercase tracking-wider text-emerald-950">
-              {isHindi ? 'ध्वनि संदेश / Voice Note (15s)' : 'Voice Memo / Audio Note (15s)'}
+              {localized ? 'ध्वनि संदेश / Voice Note (15s)' : 'Voice Memo / Audio Note (15s)'}
             </h4>
             <p className="text-[11px] text-gray-500">
-              {isHindi
+              {localized
                 ? 'लक्षणों का विवरण बोलकर रिकॉर्ड करें'
                 : 'Speak to describe symptoms in local language'}
             </p>
@@ -281,7 +282,7 @@ export function VoiceRecorder({
               </span>
               {isRecording && (
                 <span className="text-xs text-red-600 font-600 animate-pulse">
-                  {isHindi ? 'रिकॉर्डिंग चालू है…' : 'Recording audio…'}
+                  {localized ? 'रिकॉर्डिंग चालू है…' : 'Recording audio…'}
                 </span>
               )}
             </div>
@@ -300,7 +301,7 @@ export function VoiceRecorder({
                 onClick={startRecording}
                 className="btn btn-sm btn-primary flex items-center gap-1 shadow-sm"
               >
-                <Mic size={14} /> {isHindi ? 'बोलें (रिकॉर्ड करें)' : 'Start Recording'}
+                <Mic size={14} /> {localized ? 'बोलें (रिकॉर्ड करें)' : 'Start Recording'}
               </button>
             )}
           </div>
@@ -319,7 +320,7 @@ export function VoiceRecorder({
               <div className="text-xs">
                 <p className="font-700 text-gray-800 flex items-center gap-1">
                   <Check size={12} className="text-emerald-600" />
-                  {isHindi ? 'ऑडियो सुरक्षित' : 'Audio Note Attached'}
+                  {localized ? 'ऑडियो सुरक्षित' : 'Audio Note Attached'}
                 </p>
                 <p className="text-gray-400 font-mono text-[10px]">
                   {formatSeconds(recordingDuration)} · WebM Audio
@@ -342,12 +343,12 @@ export function VoiceRecorder({
       <div>
         <label className="text-[11px] font-600 text-gray-600 flex justify-between mb-1">
           <span>
-            {isHindi
+            {localized
               ? 'आवाज का ट्रांसक्रिप्ट / विवरण (संपादित करें):'
               : 'Voice Transcript / Audio Notes (Editable):'}
           </span>
           <span className="text-[10px] text-gray-400">
-            {isHindi ? 'वैकल्पिक' : 'Optional'}
+            {localized ? 'वैकल्पिक' : 'Optional'}
           </span>
         </label>
         <textarea
@@ -361,7 +362,7 @@ export function VoiceRecorder({
             });
           }}
           placeholder={
-            isHindi
+            localized
               ? 'बोलने पर यहाँ टेक्स्ट दिखाई देगा, या सीधे टाइप करें (उदा. मुंह में छाले, लार गिरना...)'
               : 'Speech transcript will appear here, or type symptom notes manually (e.g. mouth blisters, heavy salivation)...'
           }

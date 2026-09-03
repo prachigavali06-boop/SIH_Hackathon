@@ -151,25 +151,25 @@ export function DashboardPage() {
           onClick={() => setActiveTab('all')}
           className={`px-3 py-1.5 text-xs rounded-lg font-600 ${activeTab === 'all' ? 'bg-green-800 text-white' : 'bg-gray-100 text-gray-700'}`}
         >
-          Full View
+          {t('common.fullView', 'Full View')}
         </button>
         <button
           onClick={() => setActiveTab('map')}
           className={`px-3 py-1.5 text-xs rounded-lg font-600 flex items-center gap-1 ${activeTab === 'map' ? 'bg-green-800 text-white' : 'bg-gray-100 text-gray-700'}`}
         >
-          <Map size={13} /> Outbreak Radar Map
+          <Map size={13} /> {t('common.outbreakMapTab', 'Outbreak Radar Map')}
         </button>
         <button
           onClick={() => setActiveTab('explainability')}
           className={`px-3 py-1.5 text-xs rounded-lg font-600 flex items-center gap-1 ${activeTab === 'explainability' ? 'bg-green-800 text-white' : 'bg-gray-100 text-gray-700'}`}
         >
-          <ShieldAlert size={13} /> Risk Explainability
+          <ShieldAlert size={13} /> {t('common.riskExplainabilityTab', 'Risk Explainability')}
         </button>
         <button
           onClick={() => setActiveTab('analytics')}
           className={`px-3 py-1.5 text-xs rounded-lg font-600 flex items-center gap-1 ${activeTab === 'analytics' ? 'bg-green-800 text-white' : 'bg-gray-100 text-gray-700'}`}
         >
-          <BarChart3 size={13} /> Analytics
+          <BarChart3 size={13} /> {t('common.analyticsTabLabel', 'Analytics')}
         </button>
       </div>
 
@@ -182,10 +182,10 @@ export function DashboardPage() {
               <div className="flex items-center justify-between">
                 <h2 className="text-xs font-700 uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
                   <Map size={15} className="text-green-700" />
-                  Hero Feature — Outbreak Radar GIS Engine
+                  {t('common.outbreakRadarGis', 'Hero Feature — Outbreak Radar GIS Engine')}
                 </h2>
                 <span className="text-xs text-gray-500 font-mono">
-                  {filteredClusters.length} Active Clusters · {filteredMapCases.length} Map Points
+                  {filteredClusters.length} {t('dashboard.activeSurveillance', 'Active Clusters')} · {filteredMapCases.length} {t('common.mapPoints', 'Map Points')}
                 </span>
               </div>
 

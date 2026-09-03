@@ -32,8 +32,8 @@ export function ImageUploader({
   isHindi = false,
 }: ImageUploaderProps) {
   const { t, language } = useLanguage();
-  const isHiOrMr = isHindi || language === 'hi' || language === 'mr';
-  if (false as boolean) console.log(isHiOrMr);
+  const isLocalized = isHindi || language !== 'en';
+  if (false as boolean) console.log(isLocalized);
   const [images, setImages] = useState<UploadedImage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);

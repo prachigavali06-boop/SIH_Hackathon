@@ -19,6 +19,7 @@ import { createCase, getCases } from '../services/api';
 import { addEvidence } from '../services/platform';
 import { saveOfflineIncident } from '../services/offlineQueue';
 import { useAuthStore } from '../store/authStore';
+import { useLanguage } from '../i18n/useLanguage';
 
 const SPECIES_OPTIONS: { id: AnimalSpecies; label: string; emoji: string; labelHi: string }[] = [
   { id: 'cattle',  label: 'Cattle (Cow/Ox)', emoji: '🐄', labelHi: 'गाय / बैल' },
@@ -43,9 +44,8 @@ export function ReportIncidentPage() {
   const navigate = useNavigate();
   const { currentUser } = useAuthStore();
 
-  // Language state
-  const [lang, setLang] = useState<'en' | 'hi'>('en');
-  const isHi = lang === 'hi';
+  const { language, setLanguage, t } = useLanguage();
+  const isHi = language === 'hi' || language === 'mr';
 
   // Network state
   const [isOnline, setIsOnline] = useState(
@@ -489,12 +489,10 @@ export function ReportIncidentPage() {
         <div>
           <h1 className="section-title text-xl flex items-center gap-2">
             <FileText size={22} className="text-emerald-700" />
-            {isHi ? 'पशु रोग रिपोर्टिंग फॉर्म' : 'Report Animal Disease Incident'}
+            {t('reportIncident.title', isHi ? 'पशु रोग रिपोर्टिंग फॉर्म' : 'Report Animal Disease Incident')}
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {isHi
-              ? 'किसान और पैरा-वेट हेतु त्वरित रिपोर्टिंग · कम बैंडविड्थ और ऑफ़लाइन समर्थित'
-              : 'Quick field reporting for Farmers & Para-veterinarians · Multimodal & Low-Bandwidth Ready'}
+            {t('reportIncident.subtitle', isHi ? 'किसान और पैरा-वेट हेतु त्वरित रिपोर्टिंग · कम बैंडविड्थ और ऑफ़लाइन समर्थित' : 'Quick field reporting for Farmers & Para-veterinarians · Multimodal & Low-Bandwidth Ready')}
           </p>
         </div>
 
@@ -502,12 +500,12 @@ export function ReportIncidentPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setLang(l => (l === 'en' ? 'hi' : 'en'))}
+            onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
             className="btn btn-sm btn-secondary flex items-center gap-1.5 font-700 bg-white border-emerald-300 text-emerald-800"
-            aria-label="Toggle language"
+            aria-label={t('common.language', 'Toggle language')}
           >
             <Languages size={15} />
-            <span>{isHi ? 'English' : 'हिंदी में बदलें'}</span>
+            <span>{language === 'en' ? 'हिंदी में बदलें' : 'English'}</span>
           </button>
         </div>
       </div>

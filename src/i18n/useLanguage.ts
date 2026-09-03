@@ -72,6 +72,7 @@ export function useLanguage() {
   const language = useLanguageStore(state => state.language);
   const setLanguage = useLanguageStore(state => state.setLanguage);
   const t = useLanguageStore(state => state.t);
+  const isLocalized = language !== 'en';
 
   // Helper translations for common entities
   const tSpecies = (sp: string): string => {
@@ -109,6 +110,7 @@ export function useLanguage() {
   return {
     language,
     setLanguage,
+    isLocalized,
     t,
     tSpecies,
     tRiskBand,

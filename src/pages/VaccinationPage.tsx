@@ -76,7 +76,7 @@ export function VaccinationPage() {
         <div>
           <h1 className="section-title text-xl">
             <ShieldCheck size={22} className="text-emerald-700" />
-            Vaccination Coverage &amp; Vulnerability Map
+            {t('vaccination.title', 'Vaccination Coverage & Vulnerability Map')}
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {t('vaccination.subtitle', 'Targeted ring vaccination tracking and vulnerable population mapping')}
@@ -97,19 +97,19 @@ export function VaccinationPage() {
           <p className="text-xs text-gray-400 mt-1">{totalVaccinated.toLocaleString()} / {totalEligible.toLocaleString()} animals</p>
         </div>
         <div className="card p-4 text-center">
-          <p className="text-xs text-gray-500 font-600 uppercase tracking-wider">Locations Tracked</p>
+          <p className="text-xs text-gray-500 font-600 uppercase tracking-wider">{t('vaccination.locationsTracked', 'Locations Tracked')}</p>
           <p className="text-3xl font-800 mt-1 text-gray-800">{filtered.length}</p>
-          <p className="text-xs text-gray-400 mt-1">village/block records</p>
+          <p className="text-xs text-gray-400 mt-1">{t('vaccination.locationsTrackedSub', 'village/block records')}</p>
         </div>
         <div className="card p-4 text-center border-red-200 bg-red-50/30">
           <p className="text-xs text-red-600 font-600 uppercase tracking-wider">{t('vaccination.vulnerablePockets', 'Vulnerable Pockets')}</p>
           <p className="text-3xl font-800 mt-1 text-red-600">{vulnerableCount}</p>
-          <p className="text-xs text-gray-400 mt-1">below 75% threshold</p>
+          <p className="text-xs text-gray-400 mt-1">{t('vaccination.belowThreshold', 'below 75% threshold')}</p>
         </div>
         <div className="card p-4 text-center border-green-200 bg-green-50/30">
-          <p className="text-xs text-green-700 font-600 uppercase tracking-wider">Protected Locations</p>
+          <p className="text-xs text-green-700 font-600 uppercase tracking-wider">{t('vaccination.protectedLocations', 'Protected Locations')}</p>
           <p className="text-3xl font-800 mt-1 text-green-600">{filtered.length - vulnerableCount}</p>
-          <p className="text-xs text-gray-400 mt-1">at or above threshold</p>
+          <p className="text-xs text-gray-400 mt-1">{t('vaccination.atOrAboveThreshold', 'at or above threshold')}</p>
         </div>
       </div>
 
@@ -137,7 +137,7 @@ export function VaccinationPage() {
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
-          <AlertTriangle size={12} /> Vulnerable Only
+          <AlertTriangle size={12} /> {t('vaccination.vulnerableOnly', 'Vulnerable Only')}
         </button>
       </div>
 
@@ -174,11 +174,11 @@ export function VaccinationPage() {
                         <div className="flex items-center gap-2 flex-wrap">
                           {v.isVulnerable ? (
                             <span className="flex items-center gap-1 text-xs font-700 text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
-                              <AlertTriangle size={12} /> VULNERABLE
+                              <AlertTriangle size={12} /> {t('vaccination.vulnerable', 'VULNERABLE')}
                             </span>
                           ) : (
                             <span className="flex items-center gap-1 text-xs font-700 text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                              <ShieldCheck size={12} /> Protected
+                              <ShieldCheck size={12} /> {t('vaccination.protected', 'Protected')}
                             </span>
                           )}
                           <span className={`text-xs font-600 px-2 py-0.5 rounded-full border ${band.cls}`}>
@@ -193,7 +193,7 @@ export function VaccinationPage() {
                           {v.district && <span className="font-400 text-gray-500"> · {v.district}</span>}
                         </h3>
                         {v.vaccineType && (
-                          <p className="text-xs text-gray-400 mt-0.5">Vaccine: {v.vaccineType}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{t('vaccination.vaccineLabel', 'Vaccine')}: {v.vaccineType}</p>
                         )}
                       </div>
 
@@ -225,7 +225,7 @@ export function VaccinationPage() {
                       <div className="flex items-center justify-between text-[10px] text-gray-400">
                         <span>0%</span>
                         <span className="font-600 text-gray-500">
-                          Threshold: {v.riskThresholdPercentage ?? 75}%
+                          {t('vaccination.threshold', 'Threshold')}: {v.riskThresholdPercentage ?? 75}%
                         </span>
                         <span>100%</span>
                       </div>
@@ -242,17 +242,17 @@ export function VaccinationPage() {
                         ) : (
                           <span className="flex items-center gap-1 text-green-600 font-600">
                             <TrendingUp size={13} />
-                            {gap > 0 ? `${gap.toLocaleString()} animals above threshold` : 'Fully vaccinated'}
+                            {gap > 0 ? `${gap.toLocaleString()} ${t('vaccination.aboveThreshold', 'animals above threshold')}` : t('vaccination.fullyVaccinated', 'Fully vaccinated')}
                           </span>
                         )}
                       </span>
                       <span className="text-gray-400">
-                        Campaign: {v.campaignDate
+                        {t('vaccination.campaign', 'Campaign')}: {v.campaignDate
                           ? format(new Date(v.campaignDate), 'dd MMM yyyy')
                           : '—'}
                       </span>
                       {v.source && (
-                        <span className="text-gray-300">Source: {v.source}</span>
+                        <span className="text-gray-300">{t('vaccination.source', 'Source')}: {v.source}</span>
                       )}
                     </div>
                   </div>

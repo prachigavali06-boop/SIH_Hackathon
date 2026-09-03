@@ -71,7 +71,7 @@ export function AdminPage() {
         <div>
           <h1 className="section-title text-xl flex items-center gap-2">
             <Settings size={22} className="text-gray-800" />
-            Surveillance System Administration & System Health
+            {t('admin.title', 'Surveillance System Administration & System Health')}
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {t('admin.subtitle', 'Role assignments, audit logs, API telemetry & model configurations')}
@@ -84,7 +84,7 @@ export function AdminPage() {
             className="btn btn-sm btn-secondary flex items-center gap-1.5"
           >
             <RefreshCw size={14} className={seeding ? 'animate-spin' : ''} />
-            {seeding ? 'Resetting…' : 'Reset Synthetic Seed Data'}
+            {seeding ? t('admin.resetting', 'Resetting…') : t('admin.resetSeedData', 'Reset Synthetic Seed Data')}
           </button>
         </div>
       </div>
@@ -98,34 +98,34 @@ export function AdminPage() {
       {/* System Health Indicators */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
-          label="Database Status"
-          value="Connected"
+          label={t('admin.databaseStatus', 'Database Status')}
+          value={t('admin.connected', 'Connected')}
           icon={Database}
-          change="Supabase / PostgreSQL"
+          change={t('admin.databaseProvider', 'Supabase / PostgreSQL')}
           changeDirection="neutral"
           accentColor="#16a34a"
         />
         <StatCard
-          label="AI Triage Engine"
-          value="Active (TS)"
+          label={t('admin.aiTriageEngine', 'AI Triage Engine')}
+          value={t('admin.activeTs', 'Active (TS)')}
           icon={Activity}
-          change="Latency: 14ms"
+          change={t('admin.latency', 'Latency: 14ms')}
           changeDirection="neutral"
           accentColor="#7c3aed"
         />
         <StatCard
-          label="Integration Boundaries"
-          value="4 Adapters"
+          label={t('admin.integrationBoundaries', 'Integration Boundaries')}
+          value={t('admin.adapters', '4 Adapters')}
           icon={Network}
-          change="NADRES/INAPH/State/LIMS"
+          change={t('admin.integrationNames', 'NADRES/INAPH/State/LIMS')}
           changeDirection="neutral"
           accentColor="#0284c7"
         />
         <StatCard
-          label="PWA Offline Queue"
-          value="0 Pending"
+          label={t('admin.offlineQueue', 'PWA Offline Queue')}
+          value={t('admin.pendingNone', '0 Pending')}
           icon={Server}
-          change="IndexedDB Ready"
+          change={t('admin.indexedDb', 'IndexedDB Ready')}
           changeDirection="neutral"
           accentColor="#d97706"
         />
@@ -137,12 +137,12 @@ export function AdminPage() {
       {/* Government location registry */}
       <div className="card p-5 space-y-4">
         <h2 className="text-sm font-700 text-gray-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
-          <Settings size={16} /> Government Location Registry
+          <Settings size={16} /> {t('admin.locationRegistry', 'Government Location Registry')}
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <label className="space-y-1 text-xs font-600 text-gray-700">
-            <span>District</span>
+            <span>{t('common.districtLabel', 'District')}</span>
             <select
               value={selectedDistrict}
               onChange={e => setSelectedDistrict(e.target.value)}
@@ -155,7 +155,7 @@ export function AdminPage() {
           </label>
 
           <label className="space-y-1 text-xs font-600 text-gray-700">
-            <span>Taluka</span>
+            <span>{t('admin.taluka', 'Taluka')}</span>
             <select
               value={selectedTaluka}
               onChange={e => setSelectedTaluka(e.target.value)}
@@ -168,7 +168,7 @@ export function AdminPage() {
           </label>
 
           <label className="space-y-1 text-xs font-600 text-gray-700">
-            <span>Village / Locality</span>
+            <span>{t('admin.villageLocality', 'Village / Locality')}</span>
             <select
               value={selectedLocality}
               onChange={e => setSelectedLocality(e.target.value)}
@@ -182,25 +182,25 @@ export function AdminPage() {
         </div>
 
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
-          Selected hierarchy: Maharashtra → {selectedDistrict} → {selectedTaluka} → {selectedLocality}
+          {t('admin.selectedHierarchy', 'Selected hierarchy')}: Maharashtra → {selectedDistrict} → {selectedTaluka} → {selectedLocality}
         </div>
       </div>
 
       {/* Users Management */}
       <div className="card p-5 space-y-4 bg-white border border-gray-200">
         <h2 className="text-sm font-700 text-gray-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
-          <Users size={16} /> User Registry & Role Assignments
+          <Users size={16} /> {t('admin.userRegistry', 'User Registry & Role Assignments')}
         </h2>
 
         <div className="overflow-x-auto">
           <table className="data-table">
             <thead>
               <tr>
-                <th>User Name</th>
-                <th>Role</th>
-                <th>Jurisdiction / District</th>
-                <th>Phone</th>
-                <th>Status</th>
+                <th>{t('admin.userName', 'User Name')}</th>
+                <th>{t('admin.role', 'Role')}</th>
+                <th>{t('admin.jurisdiction', 'Jurisdiction / District')}</th>
+                <th>{t('admin.phone', 'Phone')}</th>
+                <th>{t('common.status', 'Status')}</th>
               </tr>
             </thead>
             <tbody>
@@ -215,7 +215,7 @@ export function AdminPage() {
                   <td className="text-gray-600">{user.district}</td>
                   <td className="font-mono text-xs text-gray-500">{user.phone ?? 'N/A'}</td>
                   <td>
-                    <Badge variant="negative" label="Active" size="sm" />
+                    <Badge variant="negative" label={t('common.active', 'Active')} size="sm" />
                   </td>
                 </tr>
               ))}
@@ -227,7 +227,7 @@ export function AdminPage() {
       {/* System Audit Log */}
       <div className="card p-5 space-y-3 bg-white border border-gray-200">
         <h2 className="text-sm font-700 text-gray-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
-          <Shield size={16} /> Audit & Governance Log
+          <Shield size={16} /> {t('admin.auditAndGovernance', 'Audit & Governance Log')}
         </h2>
 
         <div className="space-y-2 text-xs font-mono text-gray-600">

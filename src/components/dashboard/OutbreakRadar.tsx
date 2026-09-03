@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
+import { useLanguage } from '../../i18n/useLanguage';
 import {
   Map as MapIcon, Layers, ShieldAlert, X, Activity,
   FlaskConical, UserCheck, TrendingUp, AlertTriangle
@@ -61,6 +62,7 @@ export function OutbreakRadar({
   selectedVillage,
   onSelectCluster,
 }: OutbreakRadarProps) {
+  const { t } = useLanguage();
   const [showClusters, setShowClusters] = useState(true);
   const [showRiskZones, setShowRiskZones] = useState(true);
   const [activeClusterDetail, setActiveClusterDetail] = useState<OutbreakCluster | null>(null);
@@ -79,7 +81,7 @@ export function OutbreakRadar({
       <div className="absolute top-2 sm:top-3 left-2 sm:left-3 z-[400] max-w-[calc(100%-1rem)] sm:max-w-[calc(100%-1.5rem)] bg-white/95 backdrop-blur-md px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl shadow-md border border-gray-200 flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs">
         <div className="flex items-center gap-1.5 font-700 text-gray-800 border-r pr-2">
           <MapIcon size={14} className="text-green-700 flex-shrink-0" />
-          <span className="text-[11px] sm:text-xs">OUTBREAK RADAR GIS</span>
+          <span className="text-[11px] sm:text-xs">{t('common.outbreakRadarGis', 'OUTBREAK RADAR GIS')}</span>
         </div>
 
         <button
@@ -89,7 +91,7 @@ export function OutbreakRadar({
           }`}
         >
           <Layers size={12} />
-          {showClusters ? 'Cluster Zones Active' : 'Show Clusters'}
+          {showClusters ? t('common.clusterZonesActive', 'Cluster Zones Active') : t('common.showClusters', 'Show Clusters')}
         </button>
 
         <button
@@ -99,7 +101,7 @@ export function OutbreakRadar({
           }`}
         >
           <ShieldAlert size={12} />
-          {showRiskZones ? 'Risk Heatmaps Active' : 'Show Risk Heatmaps'}
+          {showRiskZones ? t('common.riskHeatmapsActive', 'Risk Heatmaps Active') : t('common.showRiskHeatmaps', 'Show Risk Heatmaps')}
         </button>
 
         <span className="hidden md:inline text-[10px] text-gray-400 font-mono ml-auto">
@@ -218,22 +220,22 @@ export function OutbreakRadar({
 
       {/* Floating Risk Legend */}
       <div className="absolute bottom-4 right-4 z-[400] bg-white/95 backdrop-blur-md p-3 rounded-xl shadow-xl border border-gray-200 text-xs space-y-1.5">
-        <p className="font-700 text-gray-800 uppercase tracking-wider text-[10px]">Outbreak Risk Tiers</p>
+        <p className="font-700 text-gray-800 uppercase tracking-wider text-[10px]">{t('common.riskTiers', 'Outbreak Risk Tiers')}</p>
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-purple-700 inline-block animate-pulse" />
-          <span className="font-600 text-purple-900">CRITICAL Risk (Confirmed / Multiple Hotspots)</span>
+          <span className="font-600 text-purple-900">{t('common.criticalRiskTier', 'CRITICAL Risk (Confirmed / Multiple Hotspots)')}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-red-600 inline-block" />
-          <span className="font-600 text-red-800">HIGH Risk Zone</span>
+          <span className="font-600 text-red-800">{t('common.highRiskZone', 'HIGH Risk Zone')}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" />
-          <span className="font-600 text-amber-800">MODERATE Risk Zone</span>
+          <span className="font-600 text-amber-800">{t('common.moderateRiskZone', 'MODERATE Risk Zone')}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-green-600 inline-block" />
-          <span className="font-600 text-green-800">LOW Risk Case</span>
+          <span className="font-600 text-green-800">{t('common.lowRiskCase', 'LOW Risk Case')}</span>
         </div>
       </div>
 

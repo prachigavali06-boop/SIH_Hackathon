@@ -20,6 +20,7 @@ import { SYNTHETIC_CASES, SYMPTOM_CATALOG, SYNTHETIC_CLUSTERS } from '../data/se
 import { getCaseById } from '../services/api';
 import { getOfflineIncidents } from '../services/offlineQueue';
 import type { CaseRecord } from '../types';
+import { useLanguage } from '../i18n/useLanguage';
 
 const SPECIES_EMOJI: Record<string, string> = {
   cattle: '🐄', buffalo: '🐃', goat: '🐐',
@@ -35,6 +36,7 @@ const CHAIN_STEP_LABELS: Record<string, string> = {
 export function CaseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [caseRecord, setCaseRecord] = useState<CaseRecord | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -163,7 +165,7 @@ export function CaseDetailPage() {
       <div className="page-enter text-center py-20">
         <p className="text-gray-400 text-lg">Case not found: {id}</p>
         <button className="btn btn-secondary mt-4" onClick={() => navigate('/cases')}>
-          ← Back to Cases
+          ← {t('cases.backToCases', 'Back to Cases')}
         </button>
       </div>
     );
@@ -189,7 +191,7 @@ export function CaseDetailPage() {
             className="btn btn-secondary btn-sm mt-0.5 flex-shrink-0"
             aria-label="Back to cases"
           >
-            <ArrowLeft size={14} /> Back
+            <ArrowLeft size={14} /> {t('common.back', 'Back')}
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -198,7 +200,7 @@ export function CaseDetailPage() {
               {tr && <Badge variant={tr.riskBand} />}
               {caseRecord.syncMetadata?.syncStatus === 'PENDING' ? (
                 <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-700 border border-amber-200">
-                  <WifiOff size={11} /> Pending Sync (Offline)
+                  <WifiOff size={11} /> {t('common.pendingSync', 'Pending Sync (Offline)')}
                 </span>
               ) : (
                 <span className="synthetic-watermark">Synthetic</span>
@@ -240,38 +242,38 @@ export function CaseDetailPage() {
           {/* Incident Summary Card */}
           <div className="card p-5 space-y-4">
             <h2 className="section-title text-sm mb-2 flex items-center justify-between">
-              <span>Incident & Animal Details</span>
+              <span>{t('cases.incidentAnimalDetails', 'Incident & Animal Details')}</span>
               <span className="font-mono text-xs text-gray-400 font-bold">Animal Tag: TAG-MH-2026-{caseRecord.id.slice(-4)}</span>
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
               <div>
-                <p className="text-xs text-gray-400 font-600 uppercase">Case ID</p>
+                <p className="text-xs text-gray-400 font-600 uppercase">{t('cases.caseId', 'Case ID')}</p>
                 <p className="font-700 font-mono text-purple-700 mt-0.5">{caseRecord.id}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 font-600 uppercase">Species</p>
+                <p className="text-xs text-gray-400 font-600 uppercase">{t('common.speciesLabel', 'Species')}</p>
                 <p className="font-600 capitalize mt-0.5">{ir.species}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 font-600 uppercase">Total Herd Count</p>
+                <p className="text-xs text-gray-400 font-600 uppercase">{t('cases.totalHerdCount', 'Total Herd Count')}</p>
                 <p className="font-600 mt-0.5">{ir.totalAnimals} animals</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 font-600 uppercase">Affected Count</p>
+                <p className="text-xs text-gray-400 font-600 uppercase">{t('cases.affectedCount', 'Affected Count')}</p>
                 <p className="font-600 text-amber-700 mt-0.5">{ir.affectedAnimals} affected</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 font-600 uppercase">Mortality (Dead)</p>
+                <p className="text-xs text-gray-400 font-600 uppercase">{t('cases.mortality', 'Mortality (Dead)')}</p>
                 <p className={`font-700 mt-0.5 ${ir.deadAnimals > 0 ? 'text-red-600' : 'text-gray-700'}`}>
                   {ir.deadAnimals} dead
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 font-600 uppercase">Onset & Duration</p>
+                <p className="text-xs text-gray-400 font-600 uppercase">{t('cases.onsetDuration', 'Onset & Duration')}</p>
                 <p className="font-600 mt-0.5">{format(new Date(ir.onsetDate), 'dd MMM')} ({ir.durationDays} day(s))</p>
               </div>
               <div className="col-span-2 sm:col-span-3 border-t pt-2 mt-1">
-                <p className="text-xs text-gray-400 font-600 uppercase mb-1">Geographic Location</p>
+                <p className="text-xs text-gray-400 font-600 uppercase mb-1">{t('cases.geographicLocation', 'Geographic Location')}</p>
                 <p className="font-600 text-xs flex items-center gap-1">
                   <MapPin size={13} className="text-red-500" />
                   {ir.location.village}, {ir.location.block}, {ir.location.district}, {ir.location.state}
@@ -281,16 +283,16 @@ export function CaseDetailPage() {
                 </p>
               </div>
               <div className="col-span-2 sm:col-span-3 border-t pt-2">
-                <p className="text-xs text-gray-400 font-600 uppercase mb-1">Vaccination Status</p>
+                <p className="text-xs text-gray-400 font-600 uppercase mb-1">{t('cases.vaccinationStatus', 'Vaccination Status')}</p>
                 <p className="font-600 text-xs">
-                  {ir.isVaccinated ? `✅ Vaccinated — ${ir.vaccineNames ?? 'Recorded'}` : '❌ Unvaccinated Herd'}
+                  {ir.isVaccinated ? `✅ ${t('cases.vaccinated', 'Vaccinated')} — ${ir.vaccineNames ?? t('cases.recorded', 'Recorded')}` : `❌ ${t('cases.unvaccinatedHerd', 'Unvaccinated Herd')}`}
                 </p>
               </div>
             </div>
 
             {/* Symptoms list */}
             <div className="mt-3">
-              <p className="text-xs text-gray-400 font-600 uppercase mb-2">Reported Symptoms</p>
+              <p className="text-xs text-gray-400 font-600 uppercase mb-2">{t('cases.reportedSymptoms', 'Reported Symptoms')}</p>
               <div className="flex flex-wrap gap-1.5">
                 {symptoms.map(s => s && (
                   <span key={s.id} className="chip bg-purple-50 text-purple-800 border-purple-200">{s.label}</span>
@@ -300,7 +302,7 @@ export function CaseDetailPage() {
 
             {ir.additionalNotes && (
               <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 text-xs">
-                <p className="text-xs text-gray-400 font-600 uppercase mb-1">Reporter Notes</p>
+                <p className="text-xs text-gray-400 font-600 uppercase mb-1">{t('cases.reporterNotes', 'Reporter Notes')}</p>
                 <p className="text-gray-700">{ir.additionalNotes}</p>
               </div>
             )}
@@ -309,7 +311,7 @@ export function CaseDetailPage() {
           {/* AI Triage Breakdown */}
           {tr && (
             <div>
-              <h2 className="section-title text-sm mb-3">AI Triage Risk Breakdown</h2>
+              <h2 className="section-title text-sm mb-3">{t('cases.aiTriageRiskBreakdown', 'AI Triage Risk Breakdown')}</h2>
               <AIExplanationPanel triage={tr} />
             </div>
           )}
@@ -320,7 +322,7 @@ export function CaseDetailPage() {
               <h2 className="section-title text-sm mb-3 flex items-center justify-between border-b pb-2">
                 <span className="flex items-center gap-2">
                   <Stethoscope size={16} className="text-purple-700" />
-                  Veterinary Field Visit Record
+                  {t('cases.veterinaryFieldVisitRecord', 'Veterinary Field Visit Record')}
                 </span>
                 <span className="text-xs text-purple-700 font-600 font-mono">
                   {format(new Date(va.assessedAt), 'dd MMM yyyy, HH:mm')}
@@ -330,23 +332,23 @@ export function CaseDetailPage() {
               <div className="p-3 bg-purple-50 rounded-lg border border-purple-100 text-xs">
                 <p className="font-700 text-purple-900 text-sm">{va.clinicalDiagnosis ?? 'Clinical Field Visit Recorded'}</p>
                 {va.temperatureCelsius && (
-                  <p className="text-purple-700 font-600 mt-1">Body Temperature: {va.temperatureCelsius}°C</p>
+                  <p className="text-purple-700 font-600 mt-1">{t('cases.bodyTemperature', 'Body Temperature')}: {va.temperatureCelsius}°C</p>
                 )}
               </div>
 
               <div>
-                <p className="text-xs text-gray-400 font-600 uppercase mb-1">Clinical Observations & Findings</p>
+                <p className="text-xs text-gray-400 font-600 uppercase mb-1">{t('cases.clinicalObservations', 'Clinical Observations & Findings')}</p>
                 <p className="text-xs text-gray-800 leading-relaxed bg-gray-50 p-3 rounded border">{va.clinicalFindings}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div>
-                  <p className="text-xs text-gray-400 font-600 uppercase mb-0.5">AI Triage Agreement</p>
-                  <p className="font-600">{va.agreedWithAiRisk ? '✅ Agreed with AI Risk Score' : `⚠️ Revised Risk: ${va.revisedRiskBand}`}</p>
+                  <p className="text-xs text-gray-400 font-600 uppercase mb-0.5">{t('cases.aiTriageAgreement', 'AI Triage Agreement')}</p>
+                  <p className="font-600">{va.agreedWithAiRisk ? `✅ ${t('cases.agreedWithAiRisk', 'Agreed with AI Risk Score')}` : `⚠️ ${t('cases.revisedRisk', 'Revised Risk')}: ${va.revisedRiskBand}`}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 font-600 uppercase mb-0.5">Quarantine Isolation</p>
-                  <p className="font-600">{va.quarantineRecommended ? '⚠️ Recommended Isolation' : '✅ Standard Monitoring'}</p>
+                  <p className="text-xs text-gray-400 font-600 uppercase mb-0.5">{t('cases.quarantineIsolation', 'Quarantine Isolation')}</p>
+                  <p className="font-600">{va.quarantineRecommended ? `⚠️ ${t('cases.recommendedIsolation', 'Recommended Isolation')}` : `✅ ${t('cases.standardMonitoring', 'Standard Monitoring')}`}</p>
                 </div>
               </div>
 
@@ -354,7 +356,7 @@ export function CaseDetailPage() {
               {va.photos && va.photos.length > 0 && (
                 <div className="pt-2">
                   <p className="text-xs text-gray-400 font-600 uppercase mb-2 flex items-center gap-1">
-                    <Camera size={13} /> Field Visit Photos
+                    <Camera size={13} /> {t('cases.fieldVisitPhotos', 'Field Visit Photos')}
                   </p>
                   <div className="flex gap-2 overflow-x-auto">
                     {va.photos.map((url, i) => (
@@ -371,14 +373,14 @@ export function CaseDetailPage() {
             <div className="card p-5 space-y-3">
               <h2 className="section-title text-sm mb-3 flex items-center gap-2 border-b pb-2">
                 <FlaskConical size={16} className="text-amber-600" />
-                Sample Collection & Transport Status
+                {t('cases.sampleCollectionTransportStatus', 'Sample Collection & Transport Status')}
               </h2>
               <div className="flex items-center justify-between text-xs flex-wrap gap-2">
                 <span className="font-mono font-700 text-amber-900 bg-amber-100 px-2.5 py-1 rounded border border-amber-200">
                   Barcode: {sc.barcode}
                 </span>
-                <span className="text-gray-600">Sample Type: <strong>{sc.sampleType}</strong></span>
-                <span className="text-gray-600">Lab: <strong>{sc.destinationLab}</strong></span>
+                <span className="text-gray-600">{t('cases.sampleType', 'Sample Type')}: <strong>{sc.sampleType}</strong></span>
+                <span className="text-gray-600">{t('cases.lab', 'Lab')}: <strong>{sc.destinationLab}</strong></span>
               </div>
 
               <div className="space-y-2 pt-2">
@@ -406,7 +408,7 @@ export function CaseDetailPage() {
                   'bg-gray-50 border-gray-300'
                 }`}>
                   <div className="flex items-center justify-between mb-1">
-                    <p className="font-700 text-xs">Laboratory Test: {lr.testName}</p>
+                    <p className="font-700 text-xs">{t('cases.laboratoryTest', 'Laboratory Test')}: {lr.testName}</p>
                     <Badge variant={lr.status} size="sm" />
                   </div>
                   {lr.pathogen && (
@@ -424,12 +426,12 @@ export function CaseDetailPage() {
           {/* Vaccination & Treatment Records */}
           {((vr && vr.length > 0) || (tx && tx.length > 0)) && (
             <div className="card p-5 space-y-4">
-              <h2 className="section-title text-sm mb-2 border-b pb-2">Treatments & Vaccination History</h2>
+              <h2 className="section-title text-sm mb-2 border-b pb-2">{t('cases.treatmentsVaccinationHistory', 'Treatments & Vaccination History')}</h2>
 
               {vr && vr.length > 0 && (
                 <div>
                   <p className="text-xs font-700 text-blue-800 mb-2 flex items-center gap-1">
-                    <Syringe size={14} /> Vaccination History
+                    <Syringe size={14} /> {t('cases.vaccinationHistory', 'Vaccination History')}
                   </p>
                   <div className="space-y-1.5">
                     {vr.map((v, idx) => (
@@ -448,7 +450,7 @@ export function CaseDetailPage() {
               {tx && tx.length > 0 && (
                 <div>
                   <p className="text-xs font-700 text-emerald-800 mb-2 flex items-center gap-1">
-                    <Pill size={14} /> Prescribed Treatments
+                    <Pill size={14} /> {t('cases.prescribedTreatments', 'Prescribed Treatments')}
                   </p>
                   <div className="space-y-1.5">
                     {tx.map((t, idx) => (
@@ -467,7 +469,7 @@ export function CaseDetailPage() {
           {/* Containment & Response Actions */}
           {ca && ca.length > 0 && (
             <div className="card p-5 space-y-3">
-              <h2 className="section-title text-sm mb-3">Response & Containment Actions</h2>
+              <h2 className="section-title text-sm mb-3">{t('cases.responseContainmentActions', 'Response & Containment Actions')}</h2>
               <div className="space-y-2">
                 {ca.map(action => (
                   <div key={action.id} className="p-3 rounded-lg bg-blue-50 border border-blue-100 text-xs">
@@ -491,7 +493,7 @@ export function CaseDetailPage() {
 
           {/* Assigned Vet & Status */}
           <div className="card p-4 space-y-2">
-            <h2 className="section-title text-xs uppercase text-gray-500 font-700">Assigned Veterinarian</h2>
+            <h2 className="section-title text-xs uppercase text-gray-500 font-700">{t('cases.assignedVeterinarian', 'Assigned Veterinarian')}</h2>
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-purple-100 text-purple-800 font-700 flex items-center justify-center text-sm">
                 AD
@@ -508,7 +510,7 @@ export function CaseDetailPage() {
             <div className="card p-4 space-y-2 border-l-4 border-amber-500 bg-amber-50/50">
               <h2 className="section-title text-xs uppercase text-amber-900 font-700 flex items-center gap-1.5">
                 <ShieldAlert size={14} className="text-amber-600" />
-                Nearby Outbreak Cluster
+                {t('cases.nearbyOutbreakCluster', 'Nearby Outbreak Cluster')}
               </h2>
               <p className="text-xs font-700 text-amber-950">{nearbyCluster.clusterName}</p>
               <p className="text-[11px] text-amber-800">
@@ -531,10 +533,10 @@ export function CaseDetailPage() {
 
           {/* Reporter & Contact Info */}
           <div className="card p-4 text-xs space-y-2">
-            <h2 className="section-title text-xs uppercase text-gray-500 font-700">Farmer & Reporter Info</h2>
-            <p className="text-gray-700 font-600">Reporter: Ramesh Kumar (Farmer)</p>
-            <p className="text-gray-500">Location: {ir.location.village}, {ir.location.block}</p>
-            <p className="text-gray-500 font-mono">Reported At: {format(new Date(ir.createdAt), 'dd MMM yyyy, HH:mm')}</p>
+            <h2 className="section-title text-xs uppercase text-gray-500 font-700">{t('cases.farmerReporterInfo', 'Farmer & Reporter Info')}</h2>
+            <p className="text-gray-700 font-600">{t('cases.reporter', 'Reporter')}: Ramesh Kumar ({t('roles.farmer', 'Farmer')})</p>
+            <p className="text-gray-500">{t('cases.location', 'Location')}: {ir.location.village}, {ir.location.block}</p>
+            <p className="text-gray-500 font-mono">{t('cases.reportedAt', 'Reported At')}: {format(new Date(ir.createdAt), 'dd MMM yyyy, HH:mm')}</p>
           </div>
 
         </div>
