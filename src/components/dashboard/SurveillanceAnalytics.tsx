@@ -50,7 +50,7 @@ export function SurveillanceAnalytics({ stats }: SurveillanceAnalyticsProps) {
   // District comparison data
   const districtData = stats.districtComparison || [
     { district: 'Nashik', activeCases: 18, confirmedCases: 8, riskBand: 'critical', vaccinationCoverage: 52.4 },
-    { district: 'Ahmednagar', activeCases: 12, confirmedCases: 5, riskBand: 'high', vaccinationCoverage: 58.0 },
+    { district: 'Ahilyanagar', activeCases: 12, confirmedCases: 5, riskBand: 'high', vaccinationCoverage: 58.0 },
     { district: 'Pune', activeCases: 7, confirmedCases: 2, riskBand: 'moderate', vaccinationCoverage: 71.2 },
     { district: 'Kolhapur', activeCases: 5, confirmedCases: 1, riskBand: 'low', vaccinationCoverage: 84.5 },
   ];
